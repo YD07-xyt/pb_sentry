@@ -51,8 +51,8 @@
             plane_thr: 0.1                                  # 0.05, the threshold for plane criteria, the smaller, the flatter a plane
             match_s: 81.0
             ivox_grid_resolution: 2.0
-            gravity: [-0.9623, -0.0374, -0.2525]                     # preknown gravity, use when imu_en is False or start from a non-stationary state
-            gravity_init: [-0.9623, -0.0374, -0.2525]                # preknown gravity in the initial IMU frame for unstationary start or in the initial LiDAR frame for using without IMU
+            gravity: [0.84192, 0.2093, 9.66844]                          # preknown gravity, use when imu_en is False or start from a non-stationary state
+            gravity_init: [0.84192, 0.2093, 9.66844]              # preknown gravity in the initial IMU frame for unstationary start or in the initial LiDAR frame for using without IMU
             extrinsic_T: [ 0.0, 0.0, 0.28]
             extrinsic_R: [ 1.0, 0.0, 0.0,
                            0.0, 1.0, 0.0,

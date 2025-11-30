@@ -65,7 +65,7 @@
 
   <!--Livox mid360-->
   <model name='simple_livox'>
-    <pose>0 0 0.2 0 0 0</pose>
+    <pose>0 0 0.2 ${pi/4} 0 ${pi/4}</pose>
     <link name="base_link">
       <inertial>
         <xmacro_block name="inertia_box" m="0.4" x="0.4" y="0.4" z="0.4" />
@@ -78,6 +78,6 @@
       </collision>
     </link>
     <!--update_rate(10-15),samples(400)-->
-    <xmacro_block name="livox" prefix="simple_" parent="base_link" pose="0 0 0.2 0 0 0" update_rate="10" samples="1500"/>
+    <xmacro_block name="livox" prefix="simple_" parent="base_link" pose="0 0 0.2 ${pi/4} 0 ${pi/4}" update_rate="10" samples="1500"/>
   </model>
 </sdf>

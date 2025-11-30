@@ -11,8 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
 import os
 
 from ament_index_python.packages import get_package_share_directory
@@ -108,6 +106,23 @@ def generate_launch_description():
             {"node_names": lifecycle_nodes},
         ],
     )
+    # pointcloud_to_laserscan 的 Qos 设置
+    # start_pointcloud_to_laserscan_node = Node(
+    #     package="pointcloud_to_laserscan",
+    #     executable="pointcloud_to_laserscan_node",
+    #     name="pointcloud_to_laserscan",
+    #     output="screen",
+    #     respawn=use_respawn,
+    #     respawn_delay=2.0,
+    #     parameters=[{'qos_reliability': 'best_effort'
+    #                 },
+    #                 configured_params],
+    #     arguments=["--ros-args", "--log-level", log_level],
+    #     remappings=[
+    #         ("cloud_in", "terrain_map_ext"),
+    #         ("scan", "obstacle_scan"),
+    #     ],
+    # )
     start_pointcloud_to_laserscan_node = Node(
         package="pointcloud_to_laserscan",
         executable="pointcloud_to_laserscan_node",
@@ -122,6 +137,7 @@ def generate_launch_description():
             ("scan", "obstacle_scan"),
         ],
     )
+
 
     start_sync_slam_toolbox_node = Node(
         package="slam_toolbox",

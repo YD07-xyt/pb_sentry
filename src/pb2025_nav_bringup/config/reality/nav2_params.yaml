@@ -64,8 +64,8 @@ point_lio:
       plane_thr: 0.1                                    # 0.05, the threshold for plane criteria, the smaller, the flatter a plane
       match_s: 81.0
       ivox_grid_resolution: 0.5
-      gravity: [0.0, 0.5305473804473877, -0.8383715748786926]            # gravity to be aligned
-      gravity_init: [0.0, 0.5305473804473877, -0.8383715748786926]       # preknown gravity in the first IMU body frame, use when imu_en is False or start from a non-stationary state
+      gravity: [-4.8798, -0.80020, -8.4518]             # gravity to be aligned
+      gravity_init: [-4.8798, -0.80020, -8.4518]        # preknown gravity in the first IMU body frame, use when imu_en is False or start from a non-stationary state
       extrinsic_T: [ -0.011, -0.02329, 0.04412 ]
       extrinsic_R: [ 1.0, 0.0, 0.0,
                      0.0, 1.0, 0.0,
@@ -124,7 +124,7 @@ terrain_analysis:
     noDataBlockSkipNum: 0
     minBlockPointNum: 10
     vehicleHeight: 0.5                  # 小于车辆高度的点才会进行处理
-    voxelPointUpdateThre: 100
+    voxelPointUpdateThre: 100PID
     voxelTimeUpdateThre: 1.0
     minRelZ: -1.5                       # min_rel_z 以及 max_rel_z 限制了有效点云点的Z值范围，用于对天花板和地板进行处理
     maxRelZ: 0.5
@@ -232,11 +232,11 @@ slam_toolbox:
     stack_size_to_use: 40000000                   # program needs a larger stack size to serialize large maps
     enable_interactive_mode: true
 
-    # ====================== 新增 QoS 核心参数 ======================
-    # 匹配 pointcloud_to_laserscan 的 BEST_EFFORT 可靠性策略
-    qos_scan_reliability: 0          # 0=BEST_EFFORT，1=RELIABLE
-    # 匹配 pointcloud_to_laserscan 的 VOLATILE 持久性策略
-    qos_scan_durability: 0           # 0=VOLATILE，1=TRANSIENT_LOCAL
+    # # ====================== 新增 QoS 核心参数 ======================
+    # # 匹配 pointcloud_to_laserscan 的 BEST_EFFORT 可靠性策略
+    # qos_scan_reliability: 0          # 0=BEST_EFFORT，1=RELIABLE
+    # # 匹配 pointcloud_to_laserscan 的 VOLATILE 持久性策略
+    # qos_scan_durability: 0           # 0=VOLATILE，1=TRANSIENT_LOCAL
 
     # General Parameters
     use_scan_matching: false
