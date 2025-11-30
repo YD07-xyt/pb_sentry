@@ -43,25 +43,6 @@ ros2 run tf2_ros static_transform_publisher --x 0 --y 0 --z 0 --roll 0 --pitch 0
 
 
 
-### 看tf
-```bash
-ros2 run rqt_tf_tree rqt_tf_tree --ros-args -r /tf:=tf -r /tf_static:=tf_static -r __ns:=/red_standard_robot1
-```
-```bash
-ros2 run tf2_tools view_frames
-```
-
-### 运行mid360
-```bash
-    source install/setup.bash
-    ros2 launch livox_ros_driver2 rviz_MID360_launch.py
-```
-
-### 运行point_lio
-```bash
-source install/setup.bash
-ROS2 launch point_lio point_lio.launch.py
-```
 
 
 
