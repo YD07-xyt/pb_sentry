@@ -21,22 +21,35 @@
 
 namespace standard_robot_pp_ros2
 {
-const uint8_t SOF_RECEIVE = 0x5A;
-const uint8_t SOF_SEND = 0x5A;
+const uint8_t SOF_RECEIVE = {"M","A"};
+const uint8_t SOF_SEND = {"M","A"};
 
 // Receive
+// debug
 const uint8_t ID_DEBUG = 0x01;
+// IMU  ID
 const uint8_t ID_IMU = 0x02;
+// !!! 机器人信息数据包 id
 const uint8_t ID_ROBOT_STATE_INFO = 0x03;
+// !!!! 事件数据包id
 const uint8_t ID_EVENT_DATA = 0x04;
+//!!! PID调参数据包id
 const uint8_t ID_PID_DEBUG = 0x05;
+// !!!! 全场机器人hp信息数据包id
 const uint8_t ID_ALL_ROBOT_HP = 0x06;
+// !!!! 比赛信息数据包id
 const uint8_t ID_GAME_STATUS = 0x07;
+// 机器人运动数据包id
 const uint8_t ID_ROBOT_MOTION = 0x08;
+// !!!! 地面机器人位置数据包id
 const uint8_t ID_GROUND_ROBOT_POSITION = 0x09;
+// !!!! RFID 状态数据包id
 const uint8_t ID_RFID_STATUS = 0x0A;
+// !!!! 机器人状态数据包id
 const uint8_t ID_ROBOT_STATUS = 0x0B;
+//  云台状态数据包id
 const uint8_t ID_JOINT_STATE = 0x0C;
+// !!!! 机器人增益和底盘能量数据包id
 const uint8_t ID_BUFF = 0x0D;
 // Send
 const uint8_t ID_ROBOT_CMD = 0x01;
@@ -46,7 +59,7 @@ const uint8_t DEBUG_PACKAGE_NAME_LEN = 10;
 
 struct HeaderFrame
 {
-  uint8_t sof;  // 数据帧起始字节，固定值为 0x5A
+  uint8_t sof;  // 数据帧起始字节，固定值为 MA
   uint8_t len;  // 数据段长度
   uint8_t id;   // 数据段id
   uint8_t crc;  // 数据帧头的 CRC8 校验
@@ -70,6 +83,8 @@ struct ReceiveDebugData
 
   uint16_t checksum;
 } __attribute__((packed));
+
+
 
 // IMU 数据包
 struct ReceiveImuData
@@ -95,6 +110,8 @@ struct ReceiveImuData
   uint16_t crc;
 } __attribute__((packed));
 
+
+
 // 机器人信息数据包
 struct ReceiveRobotInfoData
 {
@@ -106,7 +123,7 @@ struct ReceiveRobotInfoData
     /// @brief 机器人部位类型 2 bytes
     struct
     {
-      uint16_t chassis : 3;
+      uint16_t chassis : 2;
       uint16_t gimbal : 3;
       uint16_t shoot : 3;
       uint16_t arm : 3;
@@ -130,7 +147,7 @@ struct ReceiveRobotInfoData
   uint16_t crc;
 } __attribute__((packed));
 
-// 事件数据包
+// !!!! 事件数据包
 struct ReceiveEventData
 {
   HeaderFrame frame_header;
@@ -157,7 +174,7 @@ struct ReceiveEventData
   uint16_t crc;
 } __attribute__((packed));
 
-// PID调参数据包
+//!!! PID调参数据包
 struct ReceivePidDebugData
 {
   HeaderFrame frame_header;
@@ -172,6 +189,8 @@ struct ReceivePidDebugData
   uint16_t crc;
 } __attribute__((packed));
 
+
+//!!!
 // 全场机器人hp信息数据包
 struct ReceiveAllRobotHpData
 {
@@ -200,7 +219,7 @@ struct ReceiveAllRobotHpData
   uint16_t crc;
 } __attribute__((packed));
 
-// 比赛信息数据包
+// !!!比赛信息数据包
 struct ReceiveGameStatusData
 {
   HeaderFrame frame_header;
@@ -233,6 +252,7 @@ struct ReceiveRobotMotionData
   uint16_t crc;
 } __attribute__((packed));
 
+//！！
 // 地面机器人位置数据包
 struct ReceiveGroundRobotPosition
 {
@@ -258,6 +278,7 @@ struct ReceiveGroundRobotPosition
   uint16_t crc;
 } __attribute__((packed));
 
+//！！
 // RFID 状态数据包
 struct ReceiveRfidStatus
 {
@@ -326,6 +347,7 @@ struct ReceiveRobotStatus
   uint16_t crc;
 } __attribute__((packed));
 
+
 // 云台状态数据包
 struct ReceiveJointState
 {
@@ -341,6 +363,7 @@ struct ReceiveJointState
   uint16_t crc;
 } __attribute__((packed));
 
+//！！！
 // 机器人增益和底盘能量数据包
 struct ReceiveBuff
 {
@@ -371,6 +394,7 @@ struct SendRobotCmdData
 
   struct
   {
+    // 速度
     struct
     {
       float vx;
@@ -378,6 +402,7 @@ struct SendRobotCmdData
       float wz;
     } __attribute__((packed)) speed_vector;
 
+    // 底盘
     struct
     {
       float roll;
@@ -386,18 +411,21 @@ struct SendRobotCmdData
       float leg_lenth;
     } __attribute__((packed)) chassis;
 
+    // 云台
     struct
     {
       float pitch;
       float yaw;
     } __attribute__((packed)) gimbal;
 
+    // 开火
     struct
     {
       uint8_t fire;
       uint8_t fric_on;
     } __attribute__((packed)) shoot;
-
+    
+    // 追击
     struct
     {
       bool tracking;

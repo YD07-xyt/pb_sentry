@@ -52,7 +52,7 @@ chmod +x mid360.sh
 转化为单位：m/s2  
 
 **查看到的乘以9.81**  
-注意重力方向加负号  
+**注意重力方向加负号**  
 填入[配置文件位置](src/pb2025_nav_bringup/config/reality/nav2_params.yaml)的 mapping:下的gravity， gravity_init处
 
 注意： point_lio中的config修改后无效(没用到)

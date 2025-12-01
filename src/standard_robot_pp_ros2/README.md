@@ -101,7 +101,7 @@ colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
 
 |字段|长度 (Byte)|备注|
 |:-:|:-:|:-:|
-|sof|1|数据帧起始字节，固定值为 0x5A|
+|sof|1|数据帧起始字节，固定值为 MA|
 |len|1|数据段长度|
 |id|1|数据段id|
 |crc|1|数据帧头的 CRC8 校验|

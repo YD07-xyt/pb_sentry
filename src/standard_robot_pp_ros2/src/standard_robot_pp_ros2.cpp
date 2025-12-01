@@ -299,14 +299,20 @@ void StandardRobotPpRos2Node::receiveData()
       header_frame_buf.insert(header_frame_buf.begin(), sof[0]);  // 添加 sof
       HeaderFrame header_frame = fromVector<HeaderFrame>(header_frame_buf);
 
-      // HeaderFrame CRC8 check
+      HeaderFrame CRC8 check
       bool crc8_ok = crc8::verify_CRC8_check_sum(
         reinterpret_cast<uint8_t *>(&header_frame), sizeof(header_frame));
       if (!crc8_ok) {
         RCLCPP_ERROR(get_logger(), "Header frame CRC8 error!");
         continue;
       }
-
+      // bool crc16_ok = crc16::verify_CRC16_check_sum(
+      //   reinterpret_cast<uint8_t *>(&header_frame), sizeof(header_frame)
+      // );
+      // if(!crc16_ok){
+      //   RCLCPP_ERROR(get_logger(), "Header frame CRC16 error!");
+      //   continue;
+      // }
       // crc8_ok 校验正确后读取数据段
       // 根据数据段长度读取数据
       std::vector<uint8_t> data_buf(header_frame.len + 2);  // len + crc
