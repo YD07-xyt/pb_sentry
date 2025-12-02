@@ -21,8 +21,8 @@
 
 namespace standard_robot_pp_ros2
 {
-const uint8_t SOF_RECEIVE = {"M","A"};
-const uint8_t SOF_SEND = {"M","A"};
+const uint8_t SOF_RECEIVE = {'M'};
+const uint8_t SOF_SEND = {'M'};
 
 // Receive
 // debug
@@ -59,7 +59,7 @@ const uint8_t DEBUG_PACKAGE_NAME_LEN = 10;
 
 struct HeaderFrame
 {
-  uint8_t sof;  // 数据帧起始字节，固定值为 MA
+  uint8_t sof;  // 数据帧起始字节，固定值为 M
   uint8_t len;  // 数据段长度
   uint8_t id;   // 数据段id
   uint8_t crc;  // 数据帧头的 CRC8 校验
@@ -402,34 +402,34 @@ struct SendRobotCmdData
       float wz;
     } __attribute__((packed)) speed_vector;
 
-    // 底盘
-    struct
-    {
-      float roll;
-      float pitch;
-      float yaw;
-      float leg_lenth;
-    } __attribute__((packed)) chassis;
+  //   // 底盘
+  //   struct
+  //   {
+  //     float roll;
+  //     float pitch;
+  //     float yaw;
+  //     float leg_lenth;
+  //   } __attribute__((packed)) chassis;
 
-    // 云台
-    struct
-    {
-      float pitch;
-      float yaw;
-    } __attribute__((packed)) gimbal;
+  //   // 云台
+  //   struct
+  //   {
+  //     float pitch;
+  //     float yaw;
+  //   } __attribute__((packed)) gimbal;
 
-    // 开火
-    struct
-    {
-      uint8_t fire;
-      uint8_t fric_on;
-    } __attribute__((packed)) shoot;
+  //   // 开火
+  //   struct
+  //   {
+  //     uint8_t fire;
+  //     uint8_t fric_on;
+  //   } __attribute__((packed)) shoot;
     
-    // 追击
-    struct
-    {
-      bool tracking;
-    } __attribute__((packed)) tracking;
+  //   // 追击
+  //   struct
+  //   {
+  //     bool tracking;
+  //   } __attribute__((packed)) tracking;
   } __attribute__((packed)) data;
 
   uint16_t checksum;

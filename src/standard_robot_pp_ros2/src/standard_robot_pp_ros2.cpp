@@ -299,7 +299,7 @@ void StandardRobotPpRos2Node::receiveData()
       header_frame_buf.insert(header_frame_buf.begin(), sof[0]);  // 添加 sof
       HeaderFrame header_frame = fromVector<HeaderFrame>(header_frame_buf);
 
-      HeaderFrame CRC8 check
+      //HeaderFrame CRC8 check
       bool crc8_ok = crc8::verify_CRC8_check_sum(
         reinterpret_cast<uint8_t *>(&header_frame), sizeof(header_frame));
       if (!crc8_ok) {
@@ -744,25 +744,25 @@ void StandardRobotPpRos2Node::cmdGimbalJointCallback(
     return;
   }
 
-  for (size_t i = 0; i < msg->name.size(); ++i) {
-    if (msg->name[i] == "gimbal_pitch_joint") {
-      send_robot_cmd_data_.data.gimbal.pitch = msg->position[i];
-    } else if (msg->name[i] == "gimbal_yaw_joint") {
-      send_robot_cmd_data_.data.gimbal.yaw = msg->position[i];
-    }
-  }
+  // for (size_t i = 0; i < msg->name.size(); ++i) {
+  //   if (msg->name[i] == "gimbal_pitch_joint") {
+  //     //send_robot_cmd_data_.data.gimbal.pitch = msg->position[i];
+  //   } else if (msg->name[i] == "gimbal_yaw_joint") {
+  //     //send_robot_cmd_data_.data.gimbal.yaw = msg->position[i];
+  //   }
+  // }
 }
 
 void StandardRobotPpRos2Node::visionTargetCallback(
   const auto_aim_interfaces::msg::Target::SharedPtr msg)
 {
-  send_robot_cmd_data_.data.tracking.tracking = msg->tracking;
+  //send_robot_cmd_data_.data.tracking.tracking = msg->tracking;
 }
 
 void StandardRobotPpRos2Node::cmdShootCallback(const example_interfaces::msg::UInt8::SharedPtr msg)
 {
-  send_robot_cmd_data_.data.shoot.fric_on = true;
-  send_robot_cmd_data_.data.shoot.fire = msg->data;
+  // send_robot_cmd_data_.data.shoot.fric_on = true;
+  // send_robot_cmd_data_.data.shoot.fire = msg->data;
 }
 
 void StandardRobotPpRos2Node::setParam(const rclcpp::Parameter & param)
