@@ -64,13 +64,13 @@ point_lio:
       plane_thr: 0.1                                    # 0.05, the threshold for plane criteria, the smaller, the flatter a plane
       match_s: 81.0
       ivox_grid_resolution: 0.5
-      gravity: [-4.8798, -0.80020, -8.4518]             # gravity to be aligned
-      gravity_init: [-4.8798, -0.80020, -8.4518]        # preknown gravity in the first IMU body frame, use when imu_en is False or start from a non-stationary state
+      gravity: [-4.84400, -1.03554, -8.4757]             # gravity to be aligned
+      gravity_init: [-4.84400, -1.03554, -8.4757]            # preknown gravity in the first IMU body frame, use when imu_en is False or start from a non-stationary state
       extrinsic_T: [ -0.011, -0.02329, 0.04412 ]
       extrinsic_R: [ 1.0, 0.0, 0.0,
                      0.0, 1.0, 0.0,
                      0.0, 0.0, 1.0 ]
-
+#[0.49378281831741333, 0.10556984692811966, 0.8639918565750122]
     odometry:
       publish_odometry_without_downsample: True
 

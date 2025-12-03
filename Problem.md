@@ -109,3 +109,4 @@ ros2 run tf2_tools view_frames
 chmod +x run.sh
 ./run.sh
 ```
+sudo ufw disable

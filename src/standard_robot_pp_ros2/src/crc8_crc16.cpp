@@ -13,11 +13,11 @@
 // limitations under the License.
 
 #include "standard_robot_pp_ros2/crc8_crc16.hpp"
-
+#include<iostream>
 namespace crc8
 {
 // crc8 generator polynomial:G(x)=x8+x5+x4+1
-const uint8_t CRC8_INIT = 0xff;
+const uint16_t CRC8_INIT = 0xffff;
 const uint8_t CRC8_TABLE[256] = {
   0x00, 0x5e, 0xbc, 0xe2, 0x61, 0x3f, 0xdd, 0x83, 0xc2, 0x9c, 0x7e, 0x20, 0xa3, 0xfd, 0x1f, 0x41,
   0x9d, 0xc3, 0x21, 0x7f, 0xfc, 0xa2, 0x40, 0x1e, 0x5f, 0x01, 0xe3, 0xbd, 0x3e, 0x60, 0x82, 0xdc,
@@ -44,7 +44,7 @@ const uint8_t CRC8_TABLE[256] = {
   * @param[in]      ucCRC8:初始CRC8
   * @retval         计算完的CRC8
   */
-uint8_t get_CRC8_check_sum(uint8_t * pch_message, unsigned int dw_length, uint8_t ucCRC8)
+uint8_t get_CRC8_check_sum(uint8_t * pch_message, unsigned int dw_length, uint16_t ucCRC8)
 {
   uint8_t uc_index;
   while (dw_length--) {
@@ -124,6 +124,7 @@ const uint16_t W_CRC_TABLE[256] = {
   */
 uint16_t get_CRC16_check_sum(uint8_t * pch_message, uint32_t dw_length, uint16_t wCRC)
 {
+  //std::cout<<" 初始CRC16:  "<<wCRC<<std::endl;
   uint8_t ch_data;
   if (pch_message == nullptr) {
     return 0xFFFF;
@@ -133,6 +134,7 @@ uint16_t get_CRC16_check_sum(uint8_t * pch_message, uint32_t dw_length, uint16_t
     (wCRC) =
       ((uint16_t)(wCRC) >> 8) ^ W_CRC_TABLE[((uint16_t)(wCRC) ^ (uint16_t)(ch_data)) & 0x00ff];
   }
+  //std::cout<<" 计算完的CRC16:  "<<wCRC<<std::endl;
   return wCRC;
 }
 
