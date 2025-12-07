@@ -53,11 +53,34 @@ LoamInterfaceNode::LoamInterfaceNode(const rclcpp::NodeOptions & options)
 
 void LoamInterfaceNode::pointCloudCallback(const sensor_msgs::msg::PointCloud2::ConstSharedPtr msg)
 {
+  bool is_tf=0;
+  if(is_tf){
   // NOTE: Input point cloud message is based on the `lidar_odom`
   // Here we transform it to the REAL `odom` frame
+  // //=============================================================================
+  // 创建28.9度的旋转变换（绕x轴旋转）
+  double angle_degrees = 28.9;
+  double angle_radians = angle_degrees * M_PI / 180.0;
+  
+  tf2::Quaternion rotation_q;
+  rotation_q.setRPY(angle_radians, 0.0, 0.0);  // 绕x轴旋转
+  
+  tf2::Transform rotation_transform;
+  rotation_transform.setRotation(rotation_q);
+  rotation_transform.setOrigin(tf2::Vector3(0.0, 0.0, 0.0));
+  
+  // 应用额外旋转
+  sensor_msgs::msg::PointCloud2 rotated_out;
+  pcl_ros::transformPointCloud(odom_frame_, rotation_transform, *msg, rotated_out);
+  //================================================================================
+
+  auto out = std::make_shared<sensor_msgs::msg::PointCloud2>();
+  pcl_ros::transformPointCloud(odom_frame_, tf_odom_to_lidar_odom_, rotated_out, *out);
+ pcd_pub_->publish(*out);}
+else{
   auto out = std::make_shared<sensor_msgs::msg::PointCloud2>();
   pcl_ros::transformPointCloud(odom_frame_, tf_odom_to_lidar_odom_, *msg, *out);
-  pcd_pub_->publish(*out);
+  pcd_pub_->publish(*out);}
 }
 
 void LoamInterfaceNode::odometryCallback(const nav_msgs::msg::Odometry::ConstSharedPtr msg)
@@ -81,6 +104,8 @@ void LoamInterfaceNode::odometryCallback(const nav_msgs::msg::Odometry::ConstSha
   // Transform the odometry_msg (based lidar_odom) to the odom frame
   tf2::Transform tf_lidar_odom_to_lidar;
   tf2::fromMsg(msg->pose.pose, tf_lidar_odom_to_lidar);
+  //
+  
   tf2::Transform tf_odom_to_lidar = tf_odom_to_lidar_odom_ * tf_lidar_odom_to_lidar;
 
   nav_msgs::msg::Odometry out;

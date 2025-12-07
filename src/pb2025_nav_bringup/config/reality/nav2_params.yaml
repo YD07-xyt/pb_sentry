@@ -64,13 +64,15 @@ point_lio:
       plane_thr: 0.1                                    # 0.05, the threshold for plane criteria, the smaller, the flatter a plane
       match_s: 81.0
       ivox_grid_resolution: 0.5
-      gravity: [-4.84400, -1.03554, -8.4757]             # gravity to be aligned
-      gravity_init: [-4.84400, -1.03554, -8.4757]            # preknown gravity in the first IMU body frame, use when imu_en is False or start from a non-stationary state
+      gravity: [-4.84400, -1.03554, -8.4757]        # gravity to be aligned
+      gravity_init: [-4.84400, -1.03554, -8.4757]          # preknown gravity in the first IMU body frame, use when imu_en is False or start from a non-stationary state
       extrinsic_T: [ -0.011, -0.02329, 0.04412 ]
       extrinsic_R: [ 1.0, 0.0, 0.0,
                      0.0, 1.0, 0.0,
                      0.0, 0.0, 1.0 ]
-#[0.49378281831741333, 0.10556984692811966, 0.8639918565750122]
+#      gravity: [-4.84400, -1.03554, -8.4757] 
+#      gravity_init: [-4.84400, -1.03554, -8.4757] 
+
     odometry:
       publish_odometry_without_downsample: True
 
@@ -341,7 +343,7 @@ controller_server:
     odom_topic: odometry
     controller_frequency: 20.0
     min_x_velocity_threshold: 0.001
-    min_y_velocity_threshold: 0.5
+    min_y_velocity_threshold: 0.001
     min_theta_velocity_threshold: 0.001
     failure_tolerance: 0.3
     progress_checker_plugins: ["progress_checker"]
@@ -391,7 +393,7 @@ controller_server:
 local_costmap:
   local_costmap:
     ros__parameters:
-      use_sim_time: true
+      use_sim_time: false
       update_frequency: 10.0
       publish_frequency: 5.0
       global_frame: odom
@@ -427,21 +429,21 @@ local_costmap:
           sensor_frame: front_mid360
           min_obstacle_height: 0.0
           max_obstacle_height: 2.0
-          obstacle_max_range: 5.0
+          obstacle_max_range: 4.0
           obstacle_min_range: 0.2
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
         map_subscribe_transient_local: True
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 4.0
-        inflation_radius: 0.7
+        cost_scaling_factor: 3.5
+        inflation_radius: 0.35
       always_send_full_costmap: False
 
 global_costmap:
   global_costmap:
     ros__parameters:
-      use_sim_time: true
+      use_sim_time: false
       update_frequency: 5.0
       publish_frequency: 2.0
       global_frame: map
@@ -482,8 +484,8 @@ global_costmap:
         map_subscribe_transient_local: True
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 4.0
-        inflation_radius: 0.7
+        cost_scaling_factor: 3.5
+        inflation_radius: 0.35
       always_send_full_costmap: False
 
 # The yaml_filename does not need to be specified since it going to be set by defaults in launch.
@@ -597,13 +599,13 @@ velocity_smoother:
     smoothing_frequency: 20.0
     scale_velocities: False
     feedback: "OPEN_LOOP"
-    max_velocity: [2.5, 2.5, 3.0]
-    min_velocity: [-2.5, -2.5, -3.0]
-    max_accel: [4.5, 4.5, 5.0]
-    max_decel: [-4.5, -4.5, -5.0]
+    max_velocity: [1.5, 1.5, 2.5]
+    min_velocity: [-1.5, -1.5, -2.5]
+    max_accel: [3.0, 3.0, 4.5]
+    max_decel: [-3.0, -3.0, -4.5]
     odom_topic: "odometry"
     odom_duration: 0.1
-    deadband_velocity: [0.0, 0.0, 0.0]
+    deadband_velocity: [0.001, 0.001, 0.001]
     velocity_timeout: 1.0
 
 pb_teleop_twist_joy_node:

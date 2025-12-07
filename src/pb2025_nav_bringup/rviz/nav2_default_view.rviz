@@ -91,7 +91,7 @@ Visualization Manager:
         gimbal_pitch_odom:
           Value: false
         gimbal_yaw:
-          Value: false
+          Value: true
         gimbal_yaw_fake:
           Value: false
         gimbal_yaw_odom:
@@ -474,25 +474,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 3.2767159938812256
+      Distance: 2.159496545791626
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.1612457036972046
-        Y: 0.39029550552368164
-        Z: 0.16631826758384705
+        X: -0.03216345235705376
+        Y: -0.004318795166909695
+        Z: 0.005845237523317337
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.09979710727930069
+      Pitch: 0.7197964787483215
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz_default_plugins)
-      Yaw: 3.2350211143493652
+      Yaw: 0.00868165958672762
     Saved: ~
 Window Geometry:
   Displays:

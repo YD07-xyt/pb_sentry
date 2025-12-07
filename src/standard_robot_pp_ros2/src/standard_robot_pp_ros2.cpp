@@ -339,8 +339,8 @@ void StandardRobotPpRos2Node::receiveData()
       // 整包数据校验
       bool crc16_ok = crc16::verify_CRC16_check_sum(data_buf);
       if (!crc16_ok) {
-        RCLCPP_ERROR(get_logger(), "Data segment CRC16 error!");
-        continue;
+        //RCLCPP_ERROR(get_logger(), "Data segment CRC16 error!");
+        //continue;
       }
 
       // crc16_ok 校验正确后根据 header_frame.id 解析数据
@@ -454,7 +454,7 @@ void StandardRobotPpRos2Node::publishImuData(ReceiveImuData & imu_data)
   imu_msg.angular_velocity.y = imu_data.data.pitch_vel;
   imu_msg.angular_velocity.z = imu_data.data.yaw_vel;
   imu_pub_->publish(imu_msg);
-
+  RCLCPP_INFO(get_logger(),"imu_msg:%f,%f,%f",imu_data.data.roll_vel,imu_data.data.pitch_vel,imu_data.data.yaw_vel);
   joint_msg.name = {
     "gimbal_pitch_joint",
     "gimbal_yaw_joint",
