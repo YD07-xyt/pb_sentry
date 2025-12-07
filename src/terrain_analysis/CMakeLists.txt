@@ -18,6 +18,14 @@ endif()
 ## Export compile commands for clangd
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+#######################
+## 核心修复：添加Boost查找 ##
+#######################
+# 指定Boost最小版本（适配ROS 2 Humble的1.71+）
+set(Boost_MINIMUM_VERSION 1.71.0)
+find_package(Boost ${Boost_MINIMUM_VERSION} REQUIRED COMPONENTS date_time)
+
+# 原有依赖查找
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
@@ -31,7 +39,13 @@ find_package(message_filters REQUIRED)
 find_package(pcl_conversions REQUIRED)
 find_package(pcl_ros REQUIRED)
 
+# 构建可执行文件
 add_executable(terrainAnalysis src/terrainAnalysis.cpp)
+
+# 链接Boost::date_time目标（核心修复）
+target_link_libraries(terrainAnalysis Boost::date_time)
+
+# 原有ROS 2依赖链接
 ament_target_dependencies(
   terrainAnalysis
   rclcpp
@@ -45,6 +59,14 @@ ament_target_dependencies(
   message_filters
   pcl_ros
   pcl_conversions)
+
+# 确保Boost头文件被包含（增强鲁棒性）
+target_include_directories(terrainAnalysis
+  PUBLIC
+  ${Boost_INCLUDE_DIRS}
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
 
 install(TARGETS terrainAnalysis DESTINATION lib/${PROJECT_NAME})
 

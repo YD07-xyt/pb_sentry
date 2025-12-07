@@ -73,6 +73,7 @@ void SensorScanGenerationNode::laserCloudAndOdometryHandler(
   tf_lidar_to_chassis = getTransform(lidar_frame_, base_frame_, pcd_msg->header.stamp);
 
   tf_odom_to_chassis = tf_odom_to_lidar * tf_lidar_to_chassis;
+  
   tf_odom_to_robot_base = tf_odom_to_lidar * tf_lidar_to_robot_base_;
 
   publishTransform(

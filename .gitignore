@@ -3,3 +3,5 @@
 /install/
 /log/
 /.cache
+/src/point_lio/PCD/
+/src/pb2025_nav_bringup/pcd/

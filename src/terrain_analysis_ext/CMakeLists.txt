@@ -30,6 +30,8 @@ find_package(tf2 REQUIRED)
 find_package(message_filters REQUIRED)
 find_package(pcl_conversions REQUIRED)
 find_package(pcl_ros REQUIRED)
+# 新增：查找Boost并指定date_time组件
+find_package(Boost REQUIRED COMPONENTS date_time)
 
 add_executable(terrainAnalysisExt src/terrainAnalysisExt.cpp)
 ament_target_dependencies(
@@ -45,6 +47,11 @@ ament_target_dependencies(
   message_filters
   pcl_ros
   pcl_conversions)
+
+# 新增：链接Boost库（使用兼容所有系统的传统变量方式）
+target_link_libraries(terrainAnalysisExt
+  ${Boost_LIBRARIES}
+)
 
 install(TARGETS terrainAnalysisExt DESTINATION lib/${PROJECT_NAME})
 
