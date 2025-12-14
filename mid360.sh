@@ -3,7 +3,7 @@ TERMINAL="gnome-terminal"
 
 source_cmd="source install/setup.bash"
 
-mid360="ros2 launch livox_ros_driver2 msg_MID360_launch.py"
+mid360="ros2 launch livox_ros_driver2 rviz_MID360_launch.py"
 
 imu_data="ros2 topic echo livox/imu"
 

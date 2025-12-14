@@ -80,7 +80,7 @@ void SensorScanGenerationNode::laserCloudAndOdometryHandler(
     tf_odom_to_chassis, odometry_msg->header.frame_id, base_frame_, pcd_msg->header.stamp);
   publishOdometry(
     tf_odom_to_robot_base, odometry_msg->header.frame_id, robot_base_frame_, pcd_msg->header.stamp);
-
+    
   sensor_msgs::msg::PointCloud2 out;
   pcl_ros::transformPointCloud(lidar_frame_, tf_odom_to_lidar.inverse(), *pcd_msg, out);
   pub_laser_cloud_->publish(out);

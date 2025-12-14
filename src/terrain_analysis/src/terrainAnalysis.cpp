@@ -21,6 +21,7 @@
 #include "pcl/point_cloud.h"
 #include "pcl/point_types.h"
 #include "pcl_conversions/pcl_conversions.h"
+#include <pcl_ros/transforms.hpp>
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/joy.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
@@ -138,11 +139,34 @@ void odometryHandler(const nav_msgs::msg::Odometry::ConstSharedPtr odom) {
     if (dis >= noDecayDis)
       noDataInited = 2;
   }
+
 }
 
 // registered laser scan callback function
 void laserCloudHandler(
     const sensor_msgs::msg::PointCloud2::ConstSharedPtr laserCloud2) {
+//   ////==========================================================
+//   //[0.127,0.075,-0.435,-0.102,0.5044,-1.57]
+//   // 1. 定义平移和欧拉角参数
+//   double tx = 0.127, ty = 0.075, tz = -0.435;        // 平移（米）
+//   double roll1 = -0.092, pitch1 =-0.5044, yaw1 = -2.57; // 欧拉角（弧度）
+
+//   // 2. 构造 tf2::Transform 对象
+//   tf2::Transform tf_lidar_to_odom;
+
+//   // （1）设置平移
+//   tf_lidar_to_odom.setOrigin(tf2::Vector3(tx, ty, tz));
+
+//   // （2）欧拉角转四元数（tf2默认按 roll→pitch→yaw 顺序旋转）
+//   tf2::Quaternion q;
+//   q.setRPY(roll1, pitch1, yaw1); // 核心：将欧拉角转为四元数
+//   tf_lidar_to_odom.setRotation(q);
+//   sensor_msgs::msg::PointCloud2 lidar_cloud_odom;
+//   sensor_msgs::msg::PointCloud2 lidar_cloud_odom2;
+//   pcl_ros::transformPointCloud("odom", tf_lidar_to_odom, *laserCloud2, lidar_cloud_odom);
+//  //pcl_ros::transformPointCloud("odom", tf_lidar_to_odom, lidar_cloud_odom2, lidar_cloud_odom);
+//   //=====================++++++===============================================
+
   laserCloudTime = rclcpp::Time(laserCloud2->header.stamp).seconds();
   if (!systemInited) {
     systemInitTime = laserCloudTime;
@@ -252,7 +276,7 @@ int main(int argc, char **argv) {
   nh->get_parameter("disRatioZ", disRatioZ);
 
   auto subOdometry = nh->create_subscription<nav_msgs::msg::Odometry>(
-      "lidar_odometry", 5, odometryHandler);
+      "odometry", 5, odometryHandler);
 
   auto subLaserCloud = nh->create_subscription<sensor_msgs::msg::PointCloud2>(
       "registered_scan", 5, laserCloudHandler);
