@@ -129,7 +129,7 @@ terrain_analysis:
     voxelPointUpdateThre: 100
     voxelTimeUpdateThre: 1.0
     minRelZ: -1.5                       # min_rel_z 以及 max_rel_z 限制了有效点云点的Z值范围，用于对天花板和地板进行处理
-    maxRelZ: 3.0
+    maxRelZ: 2.0
     disRatioZ: 0.2                      # Z 值的最大最小范围由这两个值决定，但是并不等于这两个值，是有一个比例关系的，距离机器人越远，限定范围就越大，这其中考虑了坡度
 
 terrain_analysis_ext:
@@ -235,17 +235,17 @@ slam_toolbox:
     enable_interactive_mode: true
 
     # General Parameters
-    use_scan_matching: false
+    use_scan_matching: false  #匹配精度优化
     use_scan_barycenter: true
     minimum_travel_distance: 0.1
     minimum_travel_heading: 0.1
-    scan_buffer_size: 10
-    scan_buffer_maximum_scan_distance: 10.0
+    scan_buffer_size: 100
+    scan_buffer_maximum_scan_distance: 10.
     link_match_minimum_response_fine: 0.1
     link_scan_maximum_distance: 1.5
     loop_search_maximum_distance: 3.0
-    do_loop_closing: false
-    loop_match_minimum_chain_size: 10
+    do_loop_closing: true  #回环检测
+    loop_match_minimum_chain_size: 10 
     loop_match_maximum_variance_coarse: 3.0
     loop_match_minimum_response_coarse: 0.35
     loop_match_minimum_response_fine: 0.45
@@ -339,7 +339,7 @@ controller_server:
     min_x_velocity_threshold: 0.001
     min_y_velocity_threshold: 0.001
     min_theta_velocity_threshold: 0.001
-    failure_tolerance: 0.3
+    failure_tolerance: 0.0
     progress_checker_plugins: ["progress_checker"]
     goal_checker_plugins: ["general_goal_checker"]
     controller_plugins: ["FollowPath"]
@@ -354,34 +354,37 @@ controller_server:
       yaw_goal_tolerance: 6.28
     FollowPath:
       plugin: "pb_omni_pid_pursuit_controller::OmniPidPursuitController"
-      translation_kp: 3.0
-      translation_ki: 0.1
-      translation_kd: 0.3
+      # kp 3.0 ki 0.1 kd 0.3
+      translation_kp: 1.3
+      translation_ki: 0.8
+      translation_kd: 2.0
+      #角度跟随
       enable_rotation: false
-      rotation_kp: 3.0
+      rotation_kp: 2.0
       rotation_ki: 0.1
-      rotation_kd: 0.3
+      rotation_kd: 0.16
       transform_tolerance: 0.1
       min_max_sum_error: 1.0
       lookahead_dist: 2.0
+      #===========
       use_velocity_scaled_lookahead_dist: true
       lookahead_time: 1.0
       min_lookahead_dist: 0.5
-      max_lookahead_dist: 1.0
+      max_lookahead_dist: 2.0
       use_interpolation: false
       use_rotate_to_heading: false
       use_rotate_to_heading_treshold: 0.1
       min_approach_linear_velocity: 0.5
       approach_velocity_scaling_dist: 1.0
-      v_linear_min: -2.5
-      v_linear_max: 2.5
-      v_angular_min: -3.0
-      v_angular_max: 3.0
+      v_linear_min: -2.0
+      v_linear_max: 2.0
+      v_angular_min: -2.0
+      v_angular_max: 2.0
       curvature_min: 0.4                                # 低曲率阈值，低于此值不减速。
       curvature_max: 0.7                                # 高曲率阈值，高于此值大幅减速。
       reduction_ratio_at_high_curvature: 0.5            # 高曲率时的速度降低比例。 0.5 (即减速 50%)
-      curvature_forward_dist: 0.7                       # 前向距离，用于曲率计算
-      curvature_backward_dist: 0.3                      # 后向距离，用于曲率计算
+      curvature_forward_dist:  1.0                       # 前向距离，用于曲率计算
+      curvature_backward_dist: 0.5                      # 后向距离，用于曲率计算
       max_velocity_scaling_factor_rate: 0.9             # 速度缩放因子的最大变化率
 
 local_costmap:
@@ -413,7 +416,7 @@ local_costmap:
         min_obstacle_height: 0.0
         max_obstacle_height: 3.0
         min_obstacle_intensity: 0.1
-        max_obstacle_intensity: 2.0
+        max_obstacle_intensity: 150.0
         observation_sources: terrain_map
         terrain_map:
           data_type: PointCloud2
@@ -431,7 +434,7 @@ local_costmap:
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 3.5
-        inflation_radius: 0.15
+        inflation_radius: 0.1
       always_send_full_costmap: False
 
 global_costmap:
@@ -459,7 +462,7 @@ global_costmap:
         z_resolution: 0.05
         z_voxels: 16
         min_obstacle_height: 0.0
-        max_obstacle_height: .0
+        max_obstacle_height: 3.0
         min_obstacle_intensity: 0.1
         max_obstacle_intensity: 2.0
         observation_sources: terrain_map_ext
@@ -479,7 +482,8 @@ global_costmap:
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 3.5
-        inflation_radius: 0.15
+        # robot 半径0.27
+        inflation_radius: 0.0
       always_send_full_costmap: False
 
 # The yaml_filename does not need to be specified since it going to be set by defaults in launch.
@@ -520,9 +524,9 @@ planner_server:
       retrospective_penalty: 0.025        # For Hybrid/Lattice nodes: 优先考虑路径上较晚的机动而不是较早的机动。节省搜索时间，因为较早的节点不会被扩展，直到有必要。必须 >= 0.0且 <= 1.0
       reverse_penalty: 1.0                # For Reeds-Shepp model: 应用于倒车的惩罚，必须 >= 1
       change_penalty: 0.0                 # For Hybrid nodes: 应用于改变方向的惩罚，必须 >= 0
-      non_straight_penalty: 1.20          # For Hybrid nodes: 应用于非直线运动的惩罚，必须 >= 1
-      cost_penalty: 2.0                   # For Hybrid nodes: 在将更高代价区域添加到障碍物地图动态规划距离扩展启发式时应用的惩罚。这将驱动机器人更靠近通道的中心。1.3 - 3.5 之间的值是合理的。
-      rotation_penalty: 5.0               # For Lattice node: 仅在使用包含原地旋转原语的最小控制集时应用于纯原地旋转命令的惩罚。除非严格必要用于避开障碍物，否则应始终设置足够高的权重，以避免此操作，否则可能会在路径中频繁出现不连续的情况，要求机器人原地旋转以节省路径距离。
+      non_straight_penalty: 1.10          # For Hybrid nodes: 应用于非直线运动的惩罚，必须 >= 1
+      cost_penalty: 2.4                   # For Hybrid nodes: 在将更高代价区域添加到障碍物地图动态规划距离扩展启发式时应用的惩罚。这将驱动机器人更靠近通道的中心。1.3 - 3.5 之间的值是合理的。
+      rotation_penalty: 4.0               # For Lattice node: 仅在使用包含原地旋转原语的最小控制集时应用于纯原地旋转命令的惩罚。除非严格必要用于避开障碍物，否则应始终设置足够高的权重，以避免此操作，否则可能会在路径中频繁出现不连续的情况，要求机器人原地旋转以节省路径距离。
       lookup_table_size: 20.0             # For Hybrid nodes: 缓存的dubin/reeds-sheep距离窗口的大小，单位：米。
       cache_obstacle_heuristic: True      # For Hybrid nodes: 在同一目标位置的后续重新规划之间缓存障碍物地图动态规划距离扩展启发式。如果代价地图基本静态，则显著加快重新规划性能（40倍）。
       allow_reverse_expansion: False      # For Lattice node: 是否在前向原语或反向扩展状态格子图中扩展，将使每一步的分支因子加倍。
