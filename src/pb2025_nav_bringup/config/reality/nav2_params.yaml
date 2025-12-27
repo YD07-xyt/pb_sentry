@@ -128,8 +128,8 @@ terrain_analysis:
     vehicleHeight: 1.0                 # 小于车辆高度的点才会进行处理
     voxelPointUpdateThre: 100
     voxelTimeUpdateThre: 1.0
-    minRelZ: 0.0                       # min_rel_z 以及 max_rel_z 限制了有效点云点的Z值范围，用于对天花板和地板进行处理
-    maxRelZ: 0.55
+    minRelZ: -1.5                       # min_rel_z 以及 max_rel_z 限制了有效点云点的Z值范围，用于对天花板和地板进行处理
+    maxRelZ: 2.0
     disRatioZ: 0.2                      # Z 值的最大最小范围由这两个值决定，但是并不等于这两个值，是有一个比例关系的，距离机器人越远，限定范围就越大，这其中考虑了坡度
 
 terrain_analysis_ext:
@@ -235,17 +235,17 @@ slam_toolbox:
     enable_interactive_mode: true
 
     # General Parameters
-    use_scan_matching: false  #匹配精度优化
+    use_scan_matching: false
     use_scan_barycenter: true
     minimum_travel_distance: 0.1
     minimum_travel_heading: 0.1
-    scan_buffer_size: 100
-    scan_buffer_maximum_scan_distance: 10.
+    scan_buffer_size: 10
+    scan_buffer_maximum_scan_distance: 10.0
     link_match_minimum_response_fine: 0.1
     link_scan_maximum_distance: 1.5
     loop_search_maximum_distance: 3.0
-    do_loop_closing: true  #回环检测
-    loop_match_minimum_chain_size: 10 
+    do_loop_closing: false
+    loop_match_minimum_chain_size: 10
     loop_match_maximum_variance_coarse: 3.0
     loop_match_minimum_response_coarse: 0.35
     loop_match_minimum_response_fine: 0.45
@@ -355,14 +355,14 @@ controller_server:
     FollowPath:
       plugin: "pb_omni_pid_pursuit_controller::OmniPidPursuitController"
       # kp 3.0 ki 0.1 kd 0.3
-      translation_kp: 1.3
-      translation_ki: 0.8
-      translation_kd: 2.0
+      translation_kp: 1.7
+      translation_ki: 0.12
+      translation_kd: 0.3
       #角度跟随
       enable_rotation: false
       rotation_kp: 2.0
       rotation_ki: 0.1
-      rotation_kd: 0.16
+      rotation_kd: 0.18
       transform_tolerance: 0.1
       min_max_sum_error: 1.0
       lookahead_dist: 2.0
@@ -376,10 +376,10 @@ controller_server:
       use_rotate_to_heading_treshold: 0.1
       min_approach_linear_velocity: 0.5
       approach_velocity_scaling_dist: 1.0
-      v_linear_min: -2.0
-      v_linear_max: 2.0
-      v_angular_min: -2.0
-      v_angular_max: 2.0
+      v_linear_min: -1.5
+      v_linear_max: 1.5
+      v_angular_min: -1.0
+      v_angular_max: 1.0
       curvature_min: 0.4                                # 低曲率阈值，低于此值不减速。
       curvature_max: 0.7                                # 高曲率阈值，高于此值大幅减速。
       reduction_ratio_at_high_curvature: 0.5            # 高曲率时的速度降低比例。 0.5 (即减速 50%)
@@ -434,7 +434,7 @@ local_costmap:
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 3.5
-        inflation_radius: 0.1
+        inflation_radius: 0.35
       always_send_full_costmap: False
 
 global_costmap:
@@ -483,7 +483,7 @@ global_costmap:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 3.5
         # robot 半径0.27
-        inflation_radius: 0.0
+        inflation_radius: 0.35
       always_send_full_costmap: False
 
 # The yaml_filename does not need to be specified since it going to be set by defaults in launch.
@@ -522,9 +522,9 @@ planner_server:
       analytic_expansion_max_length: 3.0  # For Hybrid/Lattice nodes: 解析扩展被认为有效的最大长度，以防止不安全的捷径（单位：米）。这应该与最小转弯半径成比例，不应小于最小半径的4-5倍。
       minimum_turning_radius: 0.05        # For Hybrid/Lattice nodes: 路径/车辆的最小转弯半径，单位：米
       retrospective_penalty: 0.025        # For Hybrid/Lattice nodes: 优先考虑路径上较晚的机动而不是较早的机动。节省搜索时间，因为较早的节点不会被扩展，直到有必要。必须 >= 0.0且 <= 1.0
-      reverse_penalty: 1.0                # For Reeds-Shepp model: 应用于倒车的惩罚，必须 >= 1
+      reverse_penalty: 1.1                # For Reeds-Shepp model: 应用于倒车的惩罚，必须 >= 1
       change_penalty: 0.0                 # For Hybrid nodes: 应用于改变方向的惩罚，必须 >= 0
-      non_straight_penalty: 1.10          # For Hybrid nodes: 应用于非直线运动的惩罚，必须 >= 1
+      non_straight_penalty: 1.08          # For Hybrid nodes: 应用于非直线运动的惩罚，必须 >= 1
       cost_penalty: 2.4                   # For Hybrid nodes: 在将更高代价区域添加到障碍物地图动态规划距离扩展启发式时应用的惩罚。这将驱动机器人更靠近通道的中心。1.3 - 3.5 之间的值是合理的。
       rotation_penalty: 4.0               # For Lattice node: 仅在使用包含原地旋转原语的最小控制集时应用于纯原地旋转命令的惩罚。除非严格必要用于避开障碍物，否则应始终设置足够高的权重，以避免此操作，否则可能会在路径中频繁出现不连续的情况，要求机器人原地旋转以节省路径距离。
       lookup_table_size: 20.0             # For Hybrid nodes: 缓存的dubin/reeds-sheep距离窗口的大小，单位：米。
@@ -599,8 +599,8 @@ velocity_smoother:
     feedback: "OPEN_LOOP"
     max_velocity: [1.5, 1.5, 2.5]
     min_velocity: [-1.5, -1.5, -2.5]
-    max_accel: [3.0, 3.0, 4.5]
-    max_decel: [-3.0, -3.0, -4.5]
+    max_accel: [1.0, 1.0, 4.5]
+    max_decel: [-1.0, -1.0, -4.5]
     odom_topic: "odometry"
     odom_duration: 0.1
     deadband_velocity: [0.001, 0.001, 0.001]

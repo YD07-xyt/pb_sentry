@@ -389,7 +389,7 @@ struct ReceiveBuff
 struct SendRobotCmdData
 {
   HeaderFrame frame_header;
-
+  uint8_t is_rotate;
   uint32_t time_stamp;
 
   struct

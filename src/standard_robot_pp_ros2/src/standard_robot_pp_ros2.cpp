@@ -695,6 +695,7 @@ void StandardRobotPpRos2Node::sendData()
   send_robot_cmd_data_.frame_header.sof = SOF_SEND;
   send_robot_cmd_data_.frame_header.id = ID_ROBOT_CMD;
   send_robot_cmd_data_.frame_header.len = sizeof(SendRobotCmdData) - 6;
+  send_robot_cmd_data_.is_rotate = 1;
   send_robot_cmd_data_.data.speed_vector.vx = 0;
   send_robot_cmd_data_.data.speed_vector.vy = 0;
   send_robot_cmd_data_.data.speed_vector.wz = 0;
