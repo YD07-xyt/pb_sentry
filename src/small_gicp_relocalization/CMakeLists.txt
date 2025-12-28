@@ -30,6 +30,10 @@ ament_auto_add_library(${PROJECT_NAME} SHARED
 
 target_link_libraries(${PROJECT_NAME} OpenMP::OpenMP_CXX)
 
+target_compile_options(${PROJECT_NAME}
+  PRIVATE
+    -mavx
+)
 rclcpp_components_register_node(${PROJECT_NAME}
   PLUGIN small_gicp_relocalization::SmallGicpRelocalizationNode
   EXECUTABLE ${PROJECT_NAME}_node
