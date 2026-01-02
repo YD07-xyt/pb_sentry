@@ -45,8 +45,7 @@ def generate_launch_description():
     rviz_config_file = LaunchConfiguration("rviz_config_file")
     use_robot_state_pub = LaunchConfiguration("use_robot_state_pub")
     use_rviz = LaunchConfiguration("use_rviz")
-    #=====================
-    log_level = LaunchConfiguration("log_level")
+
     # Declare the launch arguments
     declare_namespace_cmd = DeclareLaunchArgument(
         "namespace",
@@ -63,7 +62,7 @@ def generate_launch_description():
     declare_world_cmd = DeclareLaunchArgument(
         "world",
         default_value="rmul_2024",
-        description="Select world: 'rmul_2024' or 'rmuc_2024'(map file share the same name as the this parameter)",
+        description="Select world: 'rmul_2024' or 'rmuc_2024' (map file share the same name as the this parameter)",
     )
 
     declare_map_yaml_cmd = DeclareLaunchArgument(
@@ -167,22 +166,6 @@ def generate_launch_description():
         parameters=[configured_params],
     )
 
-    start_pointcloud_to_laserscan_node = Node(
-        package="pointcloud_to_laserscan",
-        executable="pointcloud_to_laserscan_node",
-        name="pointcloud_to_laserscan",
-        output="screen",
-        respawn=use_respawn,
-        respawn_delay=2.0,
-        parameters=[configured_params],
-        arguments=["--ros-args", "--log-level", log_level],
-        remappings=[
-            ("cloud_in", "terrain_map_ext"),
-            ("scan", "obstacle_scan"),
-        ],
-    )
-
-
     rviz_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(launch_dir, "rviz_launch.py")),
         condition=IfCondition(use_rviz),
@@ -240,5 +223,5 @@ def generate_launch_description():
     ld.add_action(bringup_cmd)
     ld.add_action(joy_teleop_cmd)
     ld.add_action(rviz_cmd)
-    ld.add_action(start_pointcloud_to_laserscan_node)
+
     return ld

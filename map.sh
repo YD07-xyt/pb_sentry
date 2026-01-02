@@ -46,6 +46,6 @@ $TERMINAL --title "导航建图" -e "bash -c '$source_cmd && $build_map; read -p
 pid_build=$!
 echo "✅ 建图终端已启动,PID: $pid_build"
 
-# 等待所有后台进程（可选：若需主脚本不退出，保留此句）
+
 wait $pid_tf1 $pid_tf2 $pid_build
 echo "所有ROS2节点已退出,脚本结束"

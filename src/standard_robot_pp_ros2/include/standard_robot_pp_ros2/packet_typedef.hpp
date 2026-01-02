@@ -401,35 +401,6 @@ struct SendRobotCmdData
       float vy;
       float wz;
     } __attribute__((packed)) speed_vector;
-
-  //   // 底盘
-  //   struct
-  //   {
-  //     float roll;
-  //     float pitch;
-  //     float yaw;
-  //     float leg_lenth;
-  //   } __attribute__((packed)) chassis;
-
-  //   // 云台
-  //   struct
-  //   {
-  //     float pitch;
-  //     float yaw;
-  //   } __attribute__((packed)) gimbal;
-
-  //   // 开火
-  //   struct
-  //   {
-  //     uint8_t fire;
-  //     uint8_t fric_on;
-  //   } __attribute__((packed)) shoot;
-    
-  //   // 追击
-  //   struct
-  //   {
-  //     bool tracking;
-  //   } __attribute__((packed)) tracking;
   } __attribute__((packed)) data;
 
   uint16_t checksum;
