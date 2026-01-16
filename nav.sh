@@ -1,14 +1,6 @@
-#!bin/bash
-
-run="./run.sh"
-
-serial="./serial.sh"
-
-bash -c "run" &
-pid_run=$!
-echo "✅ 导航已启动,PID: $pid_run"
-
-bash -c "serial"
-pid_serial=$!
-echo "✅ 串口已启动,PID: $pid_serial"
-
+source install/setup.bash  
+ros2 launch pb2025_nav_bringup rm_navigation_reality_launch.py \
+world:=ma \
+slam:=False \
+use_composition:=True \
+use_robot_state_pub:=True

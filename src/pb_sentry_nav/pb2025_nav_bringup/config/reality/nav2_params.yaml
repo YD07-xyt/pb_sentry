@@ -283,34 +283,6 @@ bt_navigator:
     wait_for_service_timeout: 1000
     default_nav_to_pose_bt_xml: $(find-pkg-share pb2025_nav_bringup)/behavior_trees/nav2_fish.xml
     default_nav_through_poses_bt_xml: $(find-pkg-share pb2025_nav_bringup)/behavior_trees/nav2_fish_through.xml
-    local_costmap_topic: local_costmap/costmap_raw
-    global_costmap_topic: global_costmap/costmap_raw
-    local_footprint_topic: local_costmap/published_footprint
-    global_footprint_topic: global_costmap/published_footprint
-    cycle_frequency: 10.0
-    behavior_plugins: ["spin", "backup", "drive_on_heading", "assisted_teleop", "wait"]
-    spin:
-      plugin: "nav2_behaviors/Spin"
-    backup:
-      plugin: "pb_nav2_behaviors/BackUpFreeSpace"
-    drive_on_heading:
-      plugin: "nav2_behaviors/DriveOnHeading"
-    wait:
-      plugin: "nav2_behaviors/Wait"
-    assisted_teleop:
-      plugin: "nav2_behaviors/AssistedTeleop"
-    local_frame: odom
-    transform_tolerance: 0.1
-    simulate_ahead_time: 1.0
-    max_rotational_vel: 1.0
-    min_rotational_vel: 0.4
-    rotational_acc_lim: 3.2
-   # params for pb_nav2_behaviors/BackUpFreeSpace
-    robot_radius: 0.3
-    max_radius: 3.5
-    service_name: "global_costmap/get_costmap"
-    free_threshold: 5
-    visualize: True
     plugin_lib_names:
       - nav2_compute_path_to_pose_action_bt_node
       - nav2_compute_path_through_poses_action_bt_node
@@ -453,9 +425,9 @@ controller_server:
       vx_std: 1.0
       vy_std: 0.9
       wz_std: 0.001
-      vx_max: 1.9 # prediction horizon x vx_max = 3.0 m -->local costmap dim should larger than 3.0 x 2 = 6m
-      vx_min: -1.9 # Maximum reverse velocity (m/s).
-      vy_max: 1.9
+      vx_max: 1.5 # prediction horizon x vx_max = 3.0 m -->local costmap dim should larger than 3.0 x 2 = 6m
+      vx_min: -1.5 # Maximum reverse velocity (m/s).
+      vy_max: 1.5
       wz_max: 0.001
       iteration_count: 1 # Recommended to remain as 1 and instead prefer larger batch sizes.
       prune_distance: 4.0 # proportion to your maximum velocity and prediction horizon.
@@ -734,7 +706,7 @@ behavior_server:
     spin:
       plugin: "nav2_behaviors/Spin"
     backup:
-      plugin: "pb_nav2_behaviors/BackUpFreeSpace"
+      plugin:  "nav2_behaviors/BackUpTwzFree" # "pb_nav2_behaviors/BackUpFreeSpace" 
     drive_on_heading:
       plugin: "nav2_behaviors/DriveOnHeading"
     wait:
@@ -751,8 +723,8 @@ behavior_server:
     rotational_acc_lim: 3.2
     # params for pb_nav2_behaviors/BackUpFreeSpace
     service_name: "global_costmap/get_costmap"
-    max_radius: 2.0
-    visualize: false
+    max_radius: 3.0
+    visualize: true
 
 waypoint_follower:
   ros__parameters:

@@ -4,8 +4,6 @@ run="./run.sh"
 
 serial="./serial.sh"
 
-bt_tree="./bt_tree.sh"
-
 bash -c "run" &
 pid_run=$!
 echo "✅ 导航已启动,PID: $pid_run"
@@ -14,6 +12,3 @@ bash -c "serial"
 pid_serial=$!
 echo "✅ 串口已启动,PID: $pid_serial"
 
-bash -c "bt_tree"
-pid_bt_tree=$!
-echo "✅ 决策行为树已启动,PID: $pid_bt_tree"
