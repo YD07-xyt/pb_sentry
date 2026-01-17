@@ -25,26 +25,59 @@ PubNav2GoalAction::PubNav2GoalAction(
 {
 }
 
+// bool PubNav2GoalAction::setMessage(geometry_msgs::msg::PoseStamped & msg)
+// {
+//   auto goal = getInput<geometry_msgs::msg::PoseStamped>("goal");
+
+//   msg.header.stamp = now();
+//   msg.header.frame_id = "map";
+//   msg.pose = goal->pose;
+//   return true;
+// }
 bool PubNav2GoalAction::setMessage(geometry_msgs::msg::PoseStamped & msg)
 {
   auto goal = getInput<geometry_msgs::msg::PoseStamped>("goal");
 
-  msg.header.stamp = now();
+  // 1. 检查输入是否有效
+  if (!goal) {
+    // 注意：这里使用 node_ 且对 string 调用 .c_str()
+    RCLCPP_ERROR(node_->get_logger(), "[%s] 调用失败: 无法获取 goal 端口数据。错误: %s", 
+                 name().c_str(), goal.error().c_str());
+    return false; 
+  }
+
+  // 2. 只有成功了才赋值
+  msg.header.stamp = node_->now(); // 同样使用 node_
   msg.header.frame_id = "map";
-  msg.pose = goal->pose;
+  msg.pose = goal.value().pose; 
+
+  RCLCPP_DEBUG(node_->get_logger(), "[%s] 发布目标点: x=%.2f, y=%.2f", 
+               name().c_str(), msg.pose.position.x, msg.pose.position.y);
+
   return true;
 }
-
+// BT::PortsList PubNav2GoalAction::providedPorts()
+// {
+//   BT::PortsList additional_ports = {
+//     BT::InputPort<geometry_msgs::msg::PoseStamped>(
+//       "goal", "0;0;0", "Expected goal pose that send to nav2. Fill with format `x;y;yaw`"),
+//   };
+//   return providedBasicPorts(additional_ports);
+// }
 BT::PortsList PubNav2GoalAction::providedPorts()
 {
   BT::PortsList additional_ports = {
-    BT::InputPort<geometry_msgs::msg::PoseStamped>(
-      "goal", "0;0;0", "Expected goal pose that send to nav2. Fill with format `x;y;yaw`"),
+    // 关键点：移除 "0;0;0" 默认值
+    // 这样 BT 就会强制要求从黑板（如 {@default_pose}）获取数据，而不会尝试错误的字符串转换
+    BT::InputPort<geometry_msgs::msg::PoseStamped>("goal")
   };
   return providedBasicPorts(additional_ports);
 }
-
 }  // namespace pb2025_sentry_behavior
+
+
+
+
 
 #include "behaviortree_ros2/plugins.hpp"
 CreateRosNodePlugin(pb2025_sentry_behavior::PubNav2GoalAction, "PubNav2Goal");

@@ -1,14 +1,13 @@
-#!bin/bash
+#!/bin/bash
 
-run="./run.sh"
+# 获取当前脚本所在目录的绝对路径，确保在任何地方执行都能找到子脚本
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-serial="./serial.sh"
 
-bash -c "run" &
-pid_run=$!
-echo "✅ 导航已启动,PID: $pid_run"
+gnome-terminal --window --title="Navigation_Node" -- bash -c "cd $DIR; ./nav.sh; exec bash" &
+echo "✅ 导航窗口"
 
-bash -c "serial"
-pid_serial=$!
-echo "✅ 串口已启动,PID: $pid_serial"
+
+gnome-terminal --window --title="Serial_Node" -- bash -c "cd $DIR; ./serial.sh; exec bash" &
+echo "✅ 串口窗口"
 

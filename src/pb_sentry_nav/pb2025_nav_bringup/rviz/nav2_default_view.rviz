@@ -6,6 +6,7 @@ Panels:
       Expanded:
         - /Global Options1
         - /TF1/Frames1
+        - /TerrainMapExt1
       Splitter Ratio: 0.5833333134651184
     Tree Height: 425
   - Class: rviz_common/Selection
@@ -241,7 +242,7 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: Intensity
       Decay Time: 0
-      Enabled: false
+      Enabled: true
       Invert Rainbow: true
       Max Color: 255; 255; 255
       Max Intensity: 0.20000000298023224
@@ -262,7 +263,7 @@ Visualization Manager:
         Value: terrain_map_ext
       Use Fixed Frame: true
       Use rainbow: true
-      Value: false
+      Value: true
     - Alpha: 0.5
       Class: rviz_default_plugins/Map
       Color Scheme: map
@@ -473,7 +474,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 8.413346290588379
+      Distance: 11.86656379699707
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -488,10 +489,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.8447965383529663
+      Pitch: 1.5647963285446167
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz_default_plugins)
-      Yaw: 2.941864013671875
+      Yaw: 2.2518668174743652
     Saved: ~
 Window Geometry:
   Displays:

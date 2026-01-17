@@ -285,7 +285,7 @@ void StandardRobotPpRos2Node::receiveData()
 
       if (sof[0] != SOF_RECEIVE) {
         sof_count++;
-        RCLCPP_INFO(get_logger(), "Find sof, cnt=%d", sof_count);
+        //RCLCPP_INFO(get_logger(), "Find sof, cnt=%d", sof_count);
         continue;
       }
 
@@ -302,7 +302,7 @@ void StandardRobotPpRos2Node::receiveData()
       //HeaderFrame CRC8 check
       bool crc8_ok = crc8::verify_CRC8_check_sum(
         reinterpret_cast<uint8_t *>(&header_frame), sizeof(header_frame));
-      if (!crc8_ok) {
+      if (crc8_ok==0) {
         RCLCPP_ERROR(get_logger(), "Header frame CRC8 error!");
         continue;
       }
@@ -535,6 +535,8 @@ void StandardRobotPpRos2Node::publishGameStatus(ReceiveGameStatusData & game_sta
   pb_rm_interfaces::msg::GameStatus msg;
   msg.game_progress = game_status.data.game_progress;
   msg.stage_remain_time = game_status.data.stage_remain_time;
+  RCLCPP_INFO(get_logger(),"game_progress: %d",game_status.data.game_progress);
+  RCLCPP_INFO(get_logger(),"stage_remain_time: %d",game_status.data.stage_remain_time);
   game_status_pub_->publish(msg);
 
   if (record_rosbag_ && game_status.data.game_progress != previous_game_progress_) {
@@ -720,6 +722,7 @@ void StandardRobotPpRos2Node::sendData()
 
       // 发送数据
       std::vector<uint8_t> send_data = toVector(send_robot_cmd_data_);
+      //RCLCPP_INFO(get_logger(),"发送wz: %lf",send_robot_cmd_data_.data.speed_vector.wz);
       serial_driver_->port()->send(send_data);
     } catch (const std::exception & ex) {
       RCLCPP_ERROR(get_logger(), "Error sending data: %s", ex.what());
@@ -733,7 +736,8 @@ void StandardRobotPpRos2Node::cmdVelCallback(const geometry_msgs::msg::Twist::Sh
 {
   send_robot_cmd_data_.data.speed_vector.vx = msg->linear.x;
   send_robot_cmd_data_.data.speed_vector.vy = msg->linear.y;
-  send_robot_cmd_data_.data.speed_vector.wz = msg->angular.z;
+  //send_robot_cmd_data_.data.speed_vector.wz = 0.0001*msg->angular.z;
+  send_robot_cmd_data_.data.speed_vector.wz = 0.0;
 }
 
 void StandardRobotPpRos2Node::cmdGimbalJointCallback(

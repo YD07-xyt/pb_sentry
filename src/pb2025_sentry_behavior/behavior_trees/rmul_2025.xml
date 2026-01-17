@@ -35,7 +35,7 @@
                           center_gain_point="false"
                           friendly_fortress_gain_point="false"
                           key_port="{@referee_rfidStatus}"/>
-          <PubNav2Goal goal="0;0;0"
+          <PubNav2Goal goal="{@default_pose}"
                        topic_name="goal_pose"/>
         </Fallback>
       </ForceFailure>
@@ -51,7 +51,7 @@
                             duration="0.0"
                             topic_name="cmd_spin"/>
           <SubTree ID="check_robot_status"/>
-          <PubNav2Goal goal="4.65;-3.5;0"
+          <PubNav2Goal goal="{@center_goal}"
                        topic_name="goal_pose"/>
         </ReactiveSequence>
       </ForceSuccess>
@@ -106,12 +106,8 @@
                   type="pb_rm_interfaces::msg::RobotStatus_&lt;std::allocator&lt;void&gt; &gt;">RobotStatus port on blackboard</input_port>
     </Condition>
     <Condition ID="PubNav2Goal">
-      <input_port name="goal"
-                  default="0;0;0"
-                  type="geometry_msgs::msg::PoseStamped_&lt;std::allocator&lt;void&gt; &gt;">Expected goal pose that send to nav2. Fill with format `x;y;yaw`</input_port>
-      <input_port name="topic_name"
-                  default="__default__placeholder__"
-                  type="std::string">Topic name</input_port>
+      <input_port name="goal">Expected goal pose object from blackboard</input_port>
+      <input_port name="topic_name" default="goal_pose">Topic name</input_port>
     </Condition>
     <Action ID="PublishSpinSpeed">
       <input_port name="spin_speed"

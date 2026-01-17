@@ -289,6 +289,7 @@ void publish_odometry(
     transform.transform.rotation.y = odomAftMapped.pose.pose.orientation.y;
     transform.transform.rotation.z = odomAftMapped.pose.pose.orientation.z;
     transform.header.stamp = odomAftMapped.header.stamp;
+    std::cout<<"point_lio tf变换";
     tf_br->sendTransform(transform);
   }
 }

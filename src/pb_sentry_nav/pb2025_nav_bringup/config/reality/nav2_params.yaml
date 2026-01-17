@@ -129,7 +129,7 @@ terrain_analysis:
     vehicleHeight: 1.0                 # 小于车辆高度的点才会进行处理
     voxelPointUpdateThre: 100
     voxelTimeUpdateThre: 1.0
-    minRelZ: -0.1                       # min_rel_z 以及 max_rel_z 限制了有效点云点的Z值范围，用于对天花板和地板进行处理
+    minRelZ: 0.0                       # min_rel_z 以及 max_rel_z 限制了有效点云点的Z值范围，用于对天花板和地板进行处理
     maxRelZ: 2.0
     disRatioZ: 0.2                      # Z 值的最大最小范围由这两个值决定，但是并不等于这两个值，是有一个比例关系的，距离机器人越远，限定范围就越大，这其中考虑了坡度
 
@@ -389,6 +389,118 @@ bt_navigator:
 #       curvature_backward_dist: 0.3                      # 后向距离，用于曲率计算
 #       max_velocity_scaling_factor_rate: 0.85             # 速度缩放因子的最大变化率
 
+# controller_server:
+#   ros__parameters:
+#     use_sim_time: False
+#     controller_frequency: 80.0
+#     min_x_velocity_threshold: 0.05
+#     min_y_velocity_threshold: 0.05
+#     min_theta_velocity_threshold: 0.1
+#     failure_tolerance: 1.0 # The maximum duration in seconds the called controller plugin can fail
+#     odom_topic: "state_estimation"
+#     progress_checker_plugin: "progress_checker"
+#     goal_checker_plugins: ["general_goal_checker"] 
+#     controller_plugins: ["FollowPath"]
+#     # Progress checker parameters
+#     progress_checker:
+#       plugin: "nav2_controller::SimpleProgressChecker"
+#       required_movement_radius: 0.5
+#       movement_time_allowance: 3.0
+#     # Goal checker parameters
+#     general_goal_checker:
+#       stateful: False
+#       plugin: "nav2_controller::SimpleGoalChecker"
+#       xy_goal_tolerance: 0.3
+#       yaw_goal_tolerance: 3.14
+#     FollowPath:    
+#       plugin: "nav2_mppi_controller::MPPIController"
+#       #param 
+#       adjustThre: 14.0 # slopeDegree larger than this value will trigger the adjust heading behavior
+#       minAngleDiff: 365.0 # if the angle difference is larger than this value, the robot will continue to adjust heading
+#       adjustHeadingSpeed: 0.2 # angular speed to adjust heading
+#       # 
+#       time_steps: 180 # prediction horizon = time_steps x model_dt = 3s
+#       model_dt: 0.0125 # =1/controller_frequency
+#       batch_size: 1500 # Count of randomly sampled candidate trajectories from current optimal control sequence in a given iteration. 1000 @ 50 Hz or 2000 @ 30 Hz seems to produce good results.
+#       vx_std: 1.0
+#       vy_std: 1.0
+#       wz_std: 0.0001
+#       vx_max: 1.5 # prediction horizon x vx_max = 3.0 m -->local costmap dim should larger than 3.0 x 2 = 6m
+#       vx_min: -1.5 # Maximum reverse velocity (m/s).
+#       vy_max: 1.5
+#       wz_max: 0.0001
+#       iteration_count: 1 # Recommended to remain as 1 and instead prefer larger batch sizes.
+#       prune_distance: 4.0 # proportion to your maximum velocity and prediction horizon.
+#       transform_tolerance: 0.1 # Time tolerance for data transformations with TF (s).
+#       temperature: 0.3 # 0 mean use control with best cost, huge value will lead to just taking mean of all trajectories without cost consideration.
+#       gamma: 0.07 # A trade-off between smoothness (high) and low energy (low). This is a complex parameter that likely won’t need to be changed from the default.
+#       motion_model: "Omni"
+#       visualize: false # set to true to visualize the trajectories, but it will slow down the computation by a lot
+#       reset_period: 1.0 # Required time of inactivity to reset optimizer (only in Humble
+#       regenerate_noises: false
+#       retry_attempt_limit: 3 # Number of attempts to find feasible trajectory on failure for soft-resets before reporting total failure.
+#       TrajectoryVisualizer:
+#         trajectory_step: 5
+#         time_step: 3
+#       # AckermannConstraints:
+#       #   min_turning_r: 0.2
+#       critics: ["ObstaclesCritic", "GoalCritic", "PathAlignCritic", "PathFollowCritic", "TwirlingCritic"]
+#       GoalCritic:
+#         enabled: true
+#         cost_power: 1
+#         cost_weight: 5.0
+#         threshold_to_consider: 0.7 # Minimal distance (m) between robot and goal above which goal distance cost considered. It is wise to start with this as being the same as your prediction horizon to have a clean hand-off with the path follower critic.
+#         # i.e. When this critic is add to the cost function
+#       PreferForwardCritic: # moving in the forward direction, rather than reversing.
+#         enabled: false
+#         cost_power: 1
+#         cost_weight: 5.0
+#         threshold_to_consider: 0.7 # Distance (m) between robot and goal to stop considering preferring forward and allow goal critics to take over.
+#       ObstaclesCritic: # 如果容易撞到低矮的障碍物，检查地形分析是否正确然后再调整这个参数
+#         enabled: true
+#         cost_power: 1
+#         repulsion_weight: 0.0 #! Higher radii should correspond to reduced repulsion_weight due to the penalty formation (e.g. inflation_radius - min_dist_to_obstacle). 
+#         # This is separated from the critical term to allow for fine tuning of obstacle behaviors with path alignment for dynamic scenes without impacting actions which may directly lead to near-collisions. This is applied within the inflation_radius distance from obstacles.
+#         critical_weight: 20.0
+#         consider_footprint: false # turn on this can increase computation cost
+#         collision_cost: 40.0
+#         collision_margin_distance: 0.01 # 0.05 # Margin distance (m) from collision to apply severe penalty, similar to footprint inflation. Between 0.05-0.2 is reasonable. Note that it will highly influence the controller not to enter spaces more confined than this, so ensure this parameter is set lower than the narrowest you expect the robot to need to traverse through.
+#         near_goal_distance: 0.1 # if the robot is within this distance of the goal, it will not be repelled by obstacles.
+#         inflation_radius: 0.3 # Radius to inflate costmap around lethal obstacles. This should be the same as for your inflation layer (Humble only)
+#         cost_scaling_factor: 10.0 # Exponential decay factor across inflation radius. This should be the same as for your inflation layer (Humble only)
+#         inflation_layer_name: ["local_inflation_layer","global_inflation_layer"] # 
+#       PathAlignCritic:
+#         enabled: true
+#         cost_power: 1
+#         cost_weight: 5.0
+#         max_path_occupancy_ratio: 0.001
+#         trajectory_point_step: 3 #?
+#         threshold_to_consider: 0.7 # 0.5 # Distance (m) between robot and goal to stop considering path alignment and allow goal critics to take over. So just keep it same as threshold_to_consider in GoalCritic.
+#         offset_from_furthest: 2 #  A selection of this value to be ~30% of the maximum velocity distance projected is good 
+#         # (e.g. if a planner produces points every 2.5cm, 60 can fit on the 1.5m local costmap radius. If the max speed is 0.5m/s with a 3s prediction time, 
+#         # then 20 points represents 33% of the maximum speed projected over the prediction horizon onto the path). When in doubt, 
+#         # prediction_horizon_s * max_speed / path_resolution / 3.0 is a good baseline. = 3 * 0.8 / 0.1 /3.0
+#         use_path_orientations: false
+#       PathFollowCritic: #? incentivizes making progress along the path, what is the diff between this and PathAlignCritic?
+#         enabled: true
+#         cost_power: 1
+#         cost_weight: 20.0
+#         offset_from_furthest: 10 # Number of path points after furthest one any trajectory achieves to drive path tracking relative to.
+#         threshold_to_consider: 0.7 # That is to say, path following will be considered until the robot is within this distance of the goal, at which point the goal critic will take over.
+#       PathAngleCritic: # This critic penalizes trajectories at a high relative angle to the path. This helps the robot make sharp turns when necessary due to large accumulated angular errors.
+#         enabled: false
+#         cost_power: 1 
+#         cost_weight: 2.0
+#         offset_from_furthest: 4
+#         threshold_to_consider: 0.5
+#         max_angle_to_furthest: 1.0
+#         mode: 0
+#       TwirlingCritic:
+#         enabled: true
+#         twirling_cost_power: 1
+#         twirling_cost_weight: 10.0
+
+
 controller_server:
   ros__parameters:
     use_sim_time: False
@@ -423,12 +535,12 @@ controller_server:
       model_dt: 0.014 # =1/controller_frequency
       batch_size: 1500 # Count of randomly sampled candidate trajectories from current optimal control sequence in a given iteration. 1000 @ 50 Hz or 2000 @ 30 Hz seems to produce good results.
       vx_std: 1.0
-      vy_std: 0.9
-      wz_std: 0.001
-      vx_max: 1.5 # prediction horizon x vx_max = 3.0 m -->local costmap dim should larger than 3.0 x 2 = 6m
-      vx_min: -1.5 # Maximum reverse velocity (m/s).
-      vy_max: 1.5
-      wz_max: 0.001
+      vy_std: 1.0
+      wz_std: 0.1
+      vx_max: 1.4 # prediction horizon x vx_max = 3.0 m -->local costmap dim should larger than 3.0 x 2 = 6m
+      vx_min: -1.4 # Maximum reverse velocity (m/s).
+      vy_max: 1.4
+      wz_max: 0.1
       iteration_count: 1 # Recommended to remain as 1 and instead prefer larger batch sizes.
       prune_distance: 4.0 # proportion to your maximum velocity and prediction horizon.
       transform_tolerance: 0.1 # Time tolerance for data transformations with TF (s).
@@ -461,12 +573,12 @@ controller_server:
         cost_power: 1
         repulsion_weight: 0.2 #! Higher radii should correspond to reduced repulsion_weight due to the penalty formation (e.g. inflation_radius - min_dist_to_obstacle). 
         # This is separated from the critical term to allow for fine tuning of obstacle behaviors with path alignment for dynamic scenes without impacting actions which may directly lead to near-collisions. This is applied within the inflation_radius distance from obstacles.
-        critical_weight: 25.0
+        critical_weight: 20.0
         consider_footprint: false # turn on this can increase computation cost
         collision_cost: 40.0
         collision_margin_distance: 0.05 # 0.05 # Margin distance (m) from collision to apply severe penalty, similar to footprint inflation. Between 0.05-0.2 is reasonable. Note that it will highly influence the controller not to enter spaces more confined than this, so ensure this parameter is set lower than the narrowest you expect the robot to need to traverse through.
         near_goal_distance: 0.1 # if the robot is within this distance of the goal, it will not be repelled by obstacles.
-        inflation_radius: 0.3 # Radius to inflate costmap around lethal obstacles. This should be the same as for your inflation layer (Humble only)
+        inflation_radius: 0.4 # Radius to inflate costmap around lethal obstacles. This should be the same as for your inflation layer (Humble only)
         cost_scaling_factor: 10.0 # Exponential decay factor across inflation radius. This should be the same as for your inflation layer (Humble only)
         inflation_layer_name: ["local_inflation_layer","global_inflation_layer"] # 
       PathAlignCritic:
@@ -498,7 +610,7 @@ controller_server:
       TwirlingCritic:
         enabled: true
         twirling_cost_power: 1
-        twirling_cost_weight: 10.0
+        twirling_cost_weight: 20.0
 
       # plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
       # desired_linear_vel: 0.5
@@ -537,7 +649,7 @@ local_costmap:
       width: 5
       height: 5
       resolution: 0.05
-      robot_radius: 0.27
+      robot_radius: 0.0
       plugins: ["static_layer", "intensity_voxel_layer", "inflation_layer"]
       intensity_voxel_layer:
         plugin: pb_nav2_costmap_2d::IntensityVoxelLayer
@@ -572,7 +684,7 @@ local_costmap:
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 3.5
-        inflation_radius: 0.3
+        inflation_radius: 0.0
       always_send_full_costmap: False
 
 global_costmap:
@@ -583,7 +695,7 @@ global_costmap:
       publish_frequency: 2.0
       global_frame: map
       robot_base_frame: gimbal_yaw_fake
-      robot_radius: 0.27
+      robot_radius: 0.0
       resolution: 0.05
       track_unknown_space: true
       plugins: ["static_layer", "intensity_voxel_layer", "inflation_layer"]
@@ -621,7 +733,7 @@ global_costmap:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 3.5
         # robot 半径0.27
-        inflation_radius: 0.27
+        inflation_radius: 0.0
       always_send_full_costmap: False
 
 # The yaml_filename does not need to be specified since it going to be set by defaults in launch.
@@ -647,42 +759,42 @@ planner_server:
     expected_planner_frequency: 10.0
     planner_plugins: ["GridBased"]
     GridBased:
-          # ---- Theta* ---- 
-      plugin: "nav2_theta_star_planner/ThetaStarPlanner"
-      how_many_corners: 8
-      w_euc_cost: 1.0
-      w_traversal_cost: 5.0
-      w_heuristic_cost: 1.0
-      # plugin: "nav2_smac_planner/SmacPlannerHybrid"
-      # tolerance: 0.2                      # 如果无法到达精确位置的规划容差，单位：米
-      # allow_unknown: true                 # 允许在未知空间中行驶
-      # downsample_costmap: false           # 是否对地图进行下采样
-      # downsampling_factor: 1              # 代价地图层分辨率的倍数 (e.g. 2 on a 5cm costmap would be 10cm)
-      # max_iterations: 1000000             # 搜索的最大总迭代次数（如果无法到达），设置为-1以禁用
-      # max_on_approach_iterations: 1000    # 一旦在容差范围内，尝试到达目标的最大迭代次数
-      # max_planning_time: 0.8              # 规划、平滑和上采样的最大时间（秒）。将根据规划后的剩余时间缩放最大平滑和上采样时间。
-      # cost_travel_multiplier: 6.0         # For 2D: 应用于搜索的代价乘数，以避开高代价区域。较大的值将更精确地放置在通道的中心（如果存在非“FREE”代价势场），但计算时间稍长。为了优化速度，1.0是合理的值。合理的折衷值是2.0。0.0的值有效地禁用避开障碍物的功能，像一个简单的二进制搜索A*。
-      # motion_model_for_search: "DUBIN"    # For Hybrid Dubin, Redds-Shepp
-      # angle_quantization_bins: 64         # For Hybrid nodes: 搜索的角度桶数，对于2D节点必须为1（无角度搜索）
-      # analytic_expansion_ratio: 3.5       # For Hybrid/Lattice nodes: 在搜索过程中尝试解析扩展的比例，用于最终接近。
-      # analytic_expansion_max_length: 3.0  # For Hybrid/Lattice nodes: 解析扩展被认为有效的最大长度，以防止不安全的捷径（单位：米）。这应该与最小转弯半径成比例，不应小于最小半径的4-5倍。
-      # minimum_turning_radius: 0.07        # For Hybrid/Lattice nodes: 路径/车辆的最小转弯半径，单位：米
-      # retrospective_penalty: 0.025        # For Hybrid/Lattice nodes: 优先考虑路径上较晚的机动而不是较早的机动。节省搜索时间，因为较早的节点不会被扩展，直到有必要。必须 >= 0.0且 <= 1.0
-      # reverse_penalty: 1.1                # For Reeds-Shepp model: 应用于倒车的惩罚，必须 >= 1
-      # change_penalty: 0.0                 # For Hybrid nodes: 应用于改变方向的惩罚，必须 >= 0
-      # non_straight_penalty: 1.10          # For Hybrid nodes: 应用于非直线运动的惩罚，必须 >= 1
-      # cost_penalty: 3.5                  # For Hybrid nodes: 在将更高代价区域添加到障碍物地图动态规划距离扩展启发式时应用的惩罚。这将驱动机器人更靠近通道的中心。1.3 - 3.5 之间的值是合理的。
-      # rotation_penalty: 4.0               # For Lattice node: 仅在使用包含原地旋转原语的最小控制集时应用于纯原地旋转命令的惩罚。除非严格必要用于避开障碍物，否则应始终设置足够高的权重，以避免此操作，否则可能会在路径中频繁出现不连续的情况，要求机器人原地旋转以节省路径距离。
-      # lookup_table_size: 20.0             # For Hybrid nodes: 缓存的dubin/reeds-sheep距离窗口的大小，单位：米。
-      # cache_obstacle_heuristic: True      # For Hybrid nodes: 在同一目标位置的后续重新规划之间缓存障碍物地图动态规划距离扩展启发式。如果代价地图基本静态，则显著加快重新规划性能（40倍）。
-      # allow_reverse_expansion: False      # For Lattice node: 是否在前向原语或反向扩展状态格子图中扩展，将使每一步的分支因子加倍。
-      # smooth_path: True                   # For Lattice/Hybrid nodes: 是否平滑路径，对于2D节点始终为 true。
-      # smoother:
-      #   max_iterations: 1000
-      #   w_smooth: 0.3
-      #   w_data: 0.2
-      #   tolerance: 1.0e-10
-      #   do_refinement: true
+      #     # ---- Theta* ---- 
+      # plugin: "nav2_theta_star_planner/ThetaStarPlanner"
+      # how_many_corners: 8
+      # w_euc_cost: 1.0
+      # w_traversal_cost: 5.0
+      # w_heuristic_cost: 1.0
+      plugin: "nav2_smac_planner/SmacPlannerHybrid"
+      tolerance: 0.3                      # 如果无法到达精确位置的规划容差，单位：米
+      allow_unknown: true                 # 允许在未知空间中行驶
+      downsample_costmap: false           # 是否对地图进行下采样
+      downsampling_factor: 1              # 代价地图层分辨率的倍数 (e.g. 2 on a 5cm costmap would be 10cm)
+      max_iterations: 1000000             # 搜索的最大总迭代次数（如果无法到达），设置为-1以禁用
+      max_on_approach_iterations: 1000    # 一旦在容差范围内，尝试到达目标的最大迭代次数
+      max_planning_time: 0.8              # 规划、平滑和上采样的最大时间（秒）。将根据规划后的剩余时间缩放最大平滑和上采样时间。
+      cost_travel_multiplier: 20.0         # For 2D: 应用于搜索的代价乘数，以避开高代价区域。较大的值将更精确地放置在通道的中心（如果存在非“FREE”代价势场），但计算时间稍长。为了优化速度，1.0是合理的值。合理的折衷值是2.0。0.0的值有效地禁用避开障碍物的功能，像一个简单的二进制搜索A*。
+      motion_model_for_search: "DUBIN"    # For Hybrid Dubin, Redds-Shepp
+      angle_quantization_bins: 64         # For Hybrid nodes: 搜索的角度桶数，对于2D节点必须为1（无角度搜索）
+      analytic_expansion_ratio: 3.5       # For Hybrid/Lattice nodes: 在搜索过程中尝试解析扩展的比例，用于最终接近。
+      analytic_expansion_max_length: 1.75  # For Hybrid/Lattice nodes: 解析扩展被认为有效的最大长度，以防止不安全的捷径（单位：米）。这应该与最小转弯半径成比例，不应小于最小半径的4-5倍。
+      minimum_turning_radius: 0.07        # For Hybrid/Lattice nodes: 路径/车辆的最小转弯半径，单位：米
+      retrospective_penalty: 0.025        # For Hybrid/Lattice nodes: 优先考虑路径上较晚的机动而不是较早的机动。节省搜索时间，因为较早的节点不会被扩展，直到有必要。必须 >= 0.0且 <= 1.0
+      reverse_penalty: 1.1                # For Reeds-Shepp model: 应用于倒车的惩罚，必须 >= 1
+      change_penalty: 0.0                 # For Hybrid nodes: 应用于改变方向的惩罚，必须 >= 0
+      non_straight_penalty: 1.10          # For Hybrid nodes: 应用于非直线运动的惩罚，必须 >= 1
+      cost_penalty: 5.0                 # For Hybrid nodes: 在将更高代价区域添加到障碍物地图动态规划距离扩展启发式时应用的惩罚。这将驱动机器人更靠近通道的中心。1.3 - 3.5 之间的值是合理的。
+      rotation_penalty: 4.0               # For Lattice node: 仅在使用包含原地旋转原语的最小控制集时应用于纯原地旋转命令的惩罚。除非严格必要用于避开障碍物，否则应始终设置足够高的权重，以避免此操作，否则可能会在路径中频繁出现不连续的情况，要求机器人原地旋转以节省路径距离。
+      lookup_table_size: 20.0             # For Hybrid nodes: 缓存的dubin/reeds-sheep距离窗口的大小，单位：米。
+      cache_obstacle_heuristic: True      # For Hybrid nodes: 在同一目标位置的后续重新规划之间缓存障碍物地图动态规划距离扩展启发式。如果代价地图基本静态，则显著加快重新规划性能（40倍）。
+      allow_reverse_expansion: False      # For Lattice node: 是否在前向原语或反向扩展状态格子图中扩展，将使每一步的分支因子加倍。
+      smooth_path: True                   # For Lattice/Hybrid nodes: 是否平滑路径，对于2D节点始终为 true。
+      smoother:
+        max_iterations: 1000
+        w_smooth: 0.3
+        w_data: 0.2
+        tolerance: 1.0e-10
+        do_refinement: true
 
 smoother_server:
   ros__parameters:

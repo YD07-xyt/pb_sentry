@@ -22,7 +22,7 @@ namespace crc8
 {
 extern uint8_t get_CRC8_check_sum(uint8_t * pchMessage, unsigned int dwLength, uint8_t ucCRC8);
 
-extern uint32_t verify_CRC8_check_sum(uint8_t * pchMessage, unsigned int dwLength);
+extern bool verify_CRC8_check_sum(uint8_t * pchMessage, unsigned int dwLength);
 
 extern void append_CRC8_check_sum(uint8_t * pchMessage, unsigned int dwLength);
 }  // namespace crc8

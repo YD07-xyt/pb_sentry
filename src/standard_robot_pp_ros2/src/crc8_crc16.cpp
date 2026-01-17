@@ -51,6 +51,7 @@ uint8_t get_CRC8_check_sum(uint8_t * pch_message, unsigned int dw_length, uint16
     uc_index = ucCRC8 ^ (*pch_message++);
     ucCRC8 = CRC8_TABLE[uc_index];
   }
+  //std::cout<<ucCRC8<<std::endl;
   return (ucCRC8);
 }
 
@@ -60,15 +61,21 @@ uint8_t get_CRC8_check_sum(uint8_t * pch_message, unsigned int dw_length, uint16
   * @param[in]      dw_length: 数据的长度
   * @retval         真或者假
   */
-uint32_t verify_CRC8_check_sum(uint8_t * pch_message, unsigned int dw_length)
+bool verify_CRC8_check_sum(uint8_t * pch_message, unsigned int dw_length)
 {
   uint8_t uc_expected = 0;
   if ((pch_message == nullptr) || (dw_length <= 2)) {
     return 0;
   }
   uc_expected = get_CRC8_check_sum(pch_message, dw_length - 1, CRC8_INIT);
-  return (uc_expected == pch_message[dw_length - 1]);
+  uint8_t uc_actual = pch_message[dw_length - 1];
+
+  //printf("CRC Debug: Calc[0x%02X]  Recv[0x%02X]\n", uc_expected, uc_actual);
+  //std::cout<<(uc_expected == uc_actual)<<std::endl;
+  return (uc_expected == uc_actual);
 }
+
+
 
 /**
   * @brief          添加CRC8到数据的结尾

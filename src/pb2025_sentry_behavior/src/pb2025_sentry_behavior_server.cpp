@@ -28,6 +28,8 @@
 #include "pb_rm_interfaces/msg/ground_robot_position.hpp"
 #include "pb_rm_interfaces/msg/rfid_status.hpp"
 #include "pb_rm_interfaces/msg/robot_status.hpp"
+
+#include "geometry_msgs/msg/pose_stamped.hpp"
 namespace pb2025_sentry_behavior
 {
 
@@ -72,6 +74,28 @@ bool SentryBehaviorServer::onGoalReceived(
   RCLCPP_INFO(
     node()->get_logger(), "onGoalReceived with tree name '%s' with payload '%s'", tree_name.c_str(),
     payload.c_str());
+  // 构造一个默认的 Pose
+  //-5.01, -5.08, 0
+  geometry_msgs::msg::PoseStamped default_pose;
+  default_pose.header.frame_id = "map";
+  default_pose.header.stamp = node()->now();
+  default_pose.pose.position.x = 1.33;  // X 坐标
+  default_pose.pose.position.y = 0.10;  // Y 坐标
+  default_pose.pose.position.z = 0.0;  // 平面移动通常 Z 为 0
+  default_pose.pose.orientation.w = 1.0; 
+
+  geometry_msgs::msg::PoseStamped center_goal;
+  center_goal.header.frame_id = "map";
+  center_goal.header.stamp = node()->now();
+  center_goal.pose.position.x = -0.33;  // X 坐标
+  center_goal.pose.position.y = -0.10;  // Y 坐标
+  center_goal.pose.position.z = 0.0;  // 平面移动通常 Z 为 0
+  center_goal.pose.orientation.w = 1.0; 
+  //std::string default_pose = "-3.0;3.0;0.0"; 
+  //std::string center_goal = "-1.0;-1.0;0.0";
+  // 强行写入全局黑板
+  globalBlackboard()->set("default_pose", default_pose);
+  globalBlackboard()->set("center_goal", center_goal);
   return true;
 }
 
@@ -103,6 +127,8 @@ std::optional<std::string> SentryBehaviorServer::onTreeExecutionCompleted(
 }
 
 }  // namespace pb2025_sentry_behavior
+
+
 
 int main(int argc, char * argv[])
 {
