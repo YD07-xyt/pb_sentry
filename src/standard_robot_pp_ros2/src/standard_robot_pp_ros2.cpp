@@ -15,7 +15,7 @@
 #include "standard_robot_pp_ros2/standard_robot_pp_ros2.hpp"
 
 #include <memory>
-
+#include<algorithm>
 #include "standard_robot_pp_ros2/crc8_crc16.hpp"
 #include "standard_robot_pp_ros2/packet_typedef.hpp"
 #include "std_srvs/srv/trigger.hpp"
@@ -25,6 +25,8 @@
 #define USB_PROTECT_SLEEP_TIME 1000  // (ms)
 
 using namespace std::chrono_literals;
+using NavigateToPose = nav2_msgs::action::NavigateToPose;
+using GoalHandleNav = rclcpp_action::ClientGoalHandle<NavigateToPose>;
 
 namespace standard_robot_pp_ros2
 {
@@ -39,6 +41,16 @@ StandardRobotPpRos2Node::StandardRobotPpRos2Node(const rclcpp::NodeOptions & opt
   getParams();
   createPublisher();
   createSubscription();
+
+  // //##############################################################################
+  // goal_client_ptr_ = rclcpp_action::create_client<NavigateToPose>(
+  //     this, "navigate_to_pose");
+
+  // // // 如果需要，也可以绑定反馈回调（查看剩余距离）
+  // // send_goal_options.feedback_callback = 
+  // //   std::bind(&StandardRobotPpRos2Node::feedback_callback, this, std::placeholders::_1, std::placeholders::_2);
+  // timer_ = create_wall_timer(100ms, std::bind(&StandardRobotPpRos2Node::action_client_callback, this));
+  // //#########################################################################
 
   robot_models_.chassis = {
     {0, "无底盘"}, {1, "麦轮底盘"}, {2, "全向轮底盘"}, {3, "舵轮底盘"}, {4, "平衡底盘"}};
@@ -122,6 +134,15 @@ void StandardRobotPpRos2Node::createSubscription()
   cmd_tracking_sub_ = this->create_subscription<auto_aim_interfaces::msg::Target>(
     "tracker/target", 10,
     std::bind(&StandardRobotPpRos2Node::visionTargetCallback, this, std::placeholders::_1));
+
+  goal_state_sub_ =this->create_subscription<pb_rm_interfaces::msg::NavGoal>(
+    "goal_state_topic" ,10,
+    std::bind(&StandardRobotPpRos2Node::getGoalState,this,std::placeholders::_1));
+  
+  action_status_sub_ = this->create_subscription<action_msgs::msg::GoalStatusArray>(
+  "/navigate_to_pose/_action/status",
+  10,
+  std::bind(&StandardRobotPpRos2Node::actionStatusCallback, this, std::placeholders::_1));
 }
 
 void StandardRobotPpRos2Node::getParams()
@@ -285,6 +306,8 @@ void StandardRobotPpRos2Node::receiveData()
 
       if (sof[0] != SOF_RECEIVE) {
         sof_count++;
+        //RCLCPP_WARN(get_logger(), "未匹配到 SOF! 收到的字节: 0x%02X, 期望: 0x%02X, 累计丢弃: %d", 
+        //        sof[0], SOF_RECEIVE, sof_count);
         //RCLCPP_INFO(get_logger(), "Find sof, cnt=%d", sof_count);
         continue;
       }
@@ -304,23 +327,19 @@ void StandardRobotPpRos2Node::receiveData()
         reinterpret_cast<uint8_t *>(&header_frame), sizeof(header_frame));
       if (crc8_ok==0) {
         RCLCPP_ERROR(get_logger(), "Header frame CRC8 error!");
+        RCLCPP_ERROR(get_logger(), 
+    "帧头 CRC8 校验失败! 尝试解析的 ID: 0x%02X, 数据长度: %d, SOF: 0x%02X", 
+    header_frame.id, header_frame.len, header_frame.sof);
         continue;
       }
-      // bool crc16_ok = crc16::verify_CRC16_check_sum(
-      //   reinterpret_cast<uint8_t *>(&header_frame), sizeof(header_frame)
-      // );
-      // if(!crc16_ok){
-      //   RCLCPP_ERROR(get_logger(), "Header frame CRC16 error!");
-      //   continue;
-      // }
       // crc8_ok 校验正确后读取数据段
       // 根据数据段长度读取数据
-      std::vector<uint8_t> data_buf(header_frame.len + 2);  // len + crc
+      std::vector<uint8_t> data_buf(header_frame.len );  // len + crc
       int received_len = serial_driver_->port()->receive(data_buf);
       int received_len_sum = received_len;
       // 考虑到一次性读取数据可能存在数据量过大，读取不完整的情况。需要检测是否读取完整
       // 计算剩余未读取的数据长度
-      int remain_len = header_frame.len + 2 - received_len;
+      int remain_len = header_frame.len - received_len;
       while (remain_len > 0) {  // 读取剩余未读取的数据
         std::vector<uint8_t> remain_buf(remain_len);
         received_len = serial_driver_->port()->receive(remain_buf);
@@ -331,18 +350,36 @@ void StandardRobotPpRos2Node::receiveData()
 
       // 数据段读取完成后添加 header_frame_buf 到 data_buf，得到完整数据包
       data_buf.insert(data_buf.begin(), header_frame_buf.begin(), header_frame_buf.end());
+      //size_t correct_size = 4 + header_frame.len ;
+      // if (data_buf.size() > correct_size) {
+      //   data_buf.resize(correct_size); // 强制裁掉后面多出来的“第二个包”或者“0字节”
+      // }
+      
+      // std::stringstream ss;
+      //   ss << "收到完整数据包 (Hex): ";
+      //   for (const auto & byte : data_buf) {
+      //     ss << std::hex << std::setw(2) << std::setfill('0') << (int)byte << " ";
+      //   }
+      //   RCLCPP_INFO(get_logger(), "%s", ss.str().c_str());
 
       if (!debug_ && header_frame.id == ID_DEBUG) {
         continue;
       }
 
+      //printf("CRC Debug: Recv[0x%02X]\n");
       // 整包数据校验
       bool crc16_ok = crc16::verify_CRC16_check_sum(data_buf);
       if (!crc16_ok) {
-        //RCLCPP_ERROR(get_logger(), "Data segment CRC16 error!");
-        //continue;
+        RCLCPP_ERROR(get_logger(), "Data segment CRC16 error!");
+                RCLCPP_ERROR(get_logger(), 
+    "帧头 CRC16 校验失败! 尝试解析的 ID: 0x%02X, 数据长度: %d, SOF: 0x%02X", 
+    header_frame.id, header_frame.len, header_frame.sof);
+        continue;
       }
-
+      // if(header_frame.id==ID_ROBOT_STATUS){
+      //     ReceiveRobotStatus robot_status_data = fromVector<ReceiveRobotStatus>(data_buf);
+      //     publishRobotStatus(robot_status_data);
+      // }
       // crc16_ok 校验正确后根据 header_frame.id 解析数据
       switch (header_frame.id) {
         case ID_DEBUG: {
@@ -535,13 +572,13 @@ void StandardRobotPpRos2Node::publishGameStatus(ReceiveGameStatusData & game_sta
   pb_rm_interfaces::msg::GameStatus msg;
   msg.game_progress = game_status.data.game_progress;
   msg.stage_remain_time = game_status.data.stage_remain_time;
-  RCLCPP_INFO(get_logger(),"game_progress: %d",game_status.data.game_progress);
-  RCLCPP_INFO(get_logger(),"stage_remain_time: %d",game_status.data.stage_remain_time);
+  //RCLCPP_INFO(get_logger(),"game_progress: %d",game_status.data.game_progress);
+  //RCLCPP_INFO(get_logger(),"stage_remain_time: %d",game_status.data.stage_remain_time);
   game_status_pub_->publish(msg);
 
   if (record_rosbag_ && game_status.data.game_progress != previous_game_progress_) {
     previous_game_progress_ = game_status.data.game_progress;
-    RCLCPP_INFO(get_logger(), "Game progress: %d", game_status.data.game_progress);
+    //RCLCPP_INFO(get_logger(), "Game progress: %d", game_status.data.game_progress);
 
     std::string service_name;
     switch (game_status.data.game_progress) {
@@ -557,6 +594,7 @@ void StandardRobotPpRos2Node::publishGameStatus(ReceiveGameStatusData & game_sta
 
     if (!callTriggerService(service_name)) {
       RCLCPP_ERROR(get_logger(), "Failed to call service: %s", service_name.c_str());
+   
     }
   }
 }
@@ -635,9 +673,12 @@ void StandardRobotPpRos2Node::publishRobotStatus(ReceiveRobotStatus & robot_stat
   pb_rm_interfaces::msg::RobotStatus msg;
 
   msg.robot_id = robot_status.data.robot_id;
+  //RCLCPP_INFO(get_logger(),"robot_id :%d" ,robot_status.data.robot_id);
   msg.robot_level = robot_status.data.robot_level;
   msg.current_hp = robot_status.data.current_up;
   msg.maximum_hp = robot_status.data.maximum_hp;
+  //RCLCPP_INFO(get_logger(),"current_hp :%d" ,robot_status.data.current_up);
+  //RCLCPP_INFO(get_logger(),"maximum_hp :%d" ,robot_status.data.maximum_hp);
   msg.shooter_barrel_cooling_value = robot_status.data.shooter_barrel_cooling_value;
   msg.shooter_barrel_heat_limit = robot_status.data.shooter_barrel_heat_limit;
   msg.shooter_17mm_1_barrel_heat = robot_status.data.shooter_17mm_1_barrel_heat;
@@ -697,7 +738,7 @@ void StandardRobotPpRos2Node::sendData()
   send_robot_cmd_data_.frame_header.sof = SOF_SEND;
   send_robot_cmd_data_.frame_header.id = ID_ROBOT_CMD;
   send_robot_cmd_data_.frame_header.len = sizeof(SendRobotCmdData) - 6;
-  send_robot_cmd_data_.is_rotate = 1;
+  send_robot_cmd_data_.is_scan = 0;
   send_robot_cmd_data_.data.speed_vector.vx = 0;
   send_robot_cmd_data_.data.speed_vector.vy = 0;
   send_robot_cmd_data_.data.speed_vector.wz = 0;
@@ -715,13 +756,17 @@ void StandardRobotPpRos2Node::sendData()
     }
 
     try {
+      if(send_robot_cmd_data_.data.speed_vector.wz>0.5){
+        send_robot_cmd_data_.data.speed_vector.wz=0.45;
+        RCLCPP_WARN(this->get_logger(),"wz小陀螺大于0.5");
+      }
       // 整包数据校验
       // 添加数据段crc16校验
       crc16::append_CRC16_check_sum(
         reinterpret_cast<uint8_t *>(&send_robot_cmd_data_), sizeof(SendRobotCmdData));
-
       // 发送数据
       std::vector<uint8_t> send_data = toVector(send_robot_cmd_data_);
+      //RCLCPP_INFO(get_logger(),"发送is_sacn: %d",send_robot_cmd_data_.is_scan);
       //RCLCPP_INFO(get_logger(),"发送wz: %lf",send_robot_cmd_data_.data.speed_vector.wz);
       serial_driver_->port()->send(send_data);
     } catch (const std::exception & ex) {
@@ -732,12 +777,124 @@ void StandardRobotPpRos2Node::sendData()
   }
 }
 
+void StandardRobotPpRos2Node::actionStatusCallback(const action_msgs::msg::GoalStatusArray::SharedPtr msg)
+{
+    if (msg->status_list.empty()) return;
+
+    static int last_logic_state = -1;
+    int current_logic_state = -1;
+
+    // 方案：优先级判定
+    // 只要列表里有一个 3 (正在走)，我们就认为“正在导航中”
+    // 只有当没有任何 3，且最新产生的结束状态是 4 时，才认为“导航成功”
+    
+    bool has_executing = false;
+    bool has_succeeded = false;
+
+    for (const auto & status : msg->status_list) {
+        if (status.status == 3) {
+            has_executing = true;
+            break; // 只要有一个正在执行，直接判定为执行中
+        }
+        if (status.status == 4) {
+            has_succeeded = true; 
+        }
+    }
+
+    if (has_executing) {
+        current_logic_state = 3;
+    } else if (has_succeeded) {
+        current_logic_state = 4;
+    }
+
+    // 逻辑锁判断...
+    if (current_logic_state != -1 && current_logic_state != last_logic_state) {
+        // ... 执行打印和指令 ...
+                if (current_logic_state == 4) {
+            RCLCPP_INFO(this->get_logger(), "### [事件] 到达目标点！开始扫描 ###");
+            send_robot_cmd_data_.is_scan = 0;
+            send_robot_cmd_data_.data.speed_vector.wz = 0.0;
+        } 
+        else if (current_logic_state == 3) {
+            RCLCPP_INFO(this->get_logger(), "### [事件] 正在导航中... 停止扫描 ###");
+            send_robot_cmd_data_.is_scan = 0;
+            send_robot_cmd_data_.data.speed_vector.wz = 0.0;
+        }
+        else if (current_logic_state == 0) {
+            RCLCPP_WARN(this->get_logger(), "### [事件] 导航已停止 (失败/取消) ###");
+            send_robot_cmd_data_.is_scan = 0;
+        }
+
+        last_logic_state = current_logic_state;
+    }
+}
+
+void StandardRobotPpRos2Node::action_client_callback(){
+  // 声明目标消息
+  auto goal_msg = NavigateToPose::Goal();
+
+  // 设置目标点坐标（例如去 map 坐标系的 [2.0, 1.0] 位置）
+  goal_msg.pose.header.frame_id = "map";
+  goal_msg.pose.header.stamp = this->now();
+  // goal_msg.pose.pose.position.x = 0.0;
+  // goal_msg.pose.pose.position.y = 0.0;
+  // goal_msg.pose.pose.orientation.w = 1.0; // 这里的坐标应根据你的实际需求赋值（无用）
+
+  // 3. 设置 Action 发送选项（包含你之前定义的回调）
+  auto send_goal_options = rclcpp_action::Client<NavigateToPose>::SendGoalOptions();
+  send_goal_options.result_callback = 
+    std::bind(&StandardRobotPpRos2Node::result_callback, this, std::placeholders::_1);
+  this-> goal_client_ptr_->async_send_goal(goal_msg, send_goal_options);
+}
+void StandardRobotPpRos2Node::result_callback(const GoalHandleNav::WrappedResult & result)
+{
+  switch (result.code) {
+    case rclcpp_action::ResultCode::SUCCEEDED:
+      RCLCPP_INFO(this->get_logger(), "目标达成！机器人已成功到达 Goal。");
+      send_robot_cmd_data_.is_scan = 0;
+      send_robot_cmd_data_.data.speed_vector.wz = 0.0;
+      break;
+    case rclcpp_action::ResultCode::ABORTED:
+      RCLCPP_ERROR(this->get_logger(), "任务被中止，导航失败。");
+      send_robot_cmd_data_.is_scan =0;
+      send_robot_cmd_data_.data.speed_vector.wz = 0.0;
+      return;
+    case rclcpp_action::ResultCode::CANCELED:
+      RCLCPP_WARN(this->get_logger(), "任务被取消。");
+      send_robot_cmd_data_.is_scan =0;
+      send_robot_cmd_data_.data.speed_vector.wz = 0.0;
+      return;
+    default:
+      RCLCPP_ERROR(this->get_logger(), "未知的返回状态。");
+      send_robot_cmd_data_.is_scan =0;
+      send_robot_cmd_data_.data.speed_vector.wz = 0.0;
+      return;
+  }
+  
+
+}
+
+void StandardRobotPpRos2Node::getGoalState(const pb_rm_interfaces::msg::NavGoal::SharedPtr msg)
+{ 
+   //  goal_state =1 导航成功
+  //  if(msg->goal_state == 1){
+  //     send_robot_cmd_data_.is_scan = 1;
+  //     RCLCPP_INFO(get_logger(),"goal 成功");
+  //     send_robot_cmd_data_.data.speed_vector.wz = 0.2;
+  //  }else{
+  //   send_robot_cmd_data_.is_scan =0;
+  //   send_robot_cmd_data_.data.speed_vector.wz = 0.0;
+  //  };
+   
+  RCLCPP_INFO(this->get_logger(),"反馈gaol状态成功");
+}
+
 void StandardRobotPpRos2Node::cmdVelCallback(const geometry_msgs::msg::Twist::SharedPtr msg)
 {
   send_robot_cmd_data_.data.speed_vector.vx = msg->linear.x;
   send_robot_cmd_data_.data.speed_vector.vy = msg->linear.y;
   //send_robot_cmd_data_.data.speed_vector.wz = 0.0001*msg->angular.z;
-  send_robot_cmd_data_.data.speed_vector.wz = 0.0;
+  //send_robot_cmd_data_.data.speed_vector.wz = 0.0; 
 }
 
 void StandardRobotPpRos2Node::cmdGimbalJointCallback(

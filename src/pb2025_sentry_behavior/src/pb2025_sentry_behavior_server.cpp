@@ -79,21 +79,22 @@ bool SentryBehaviorServer::onGoalReceived(
   geometry_msgs::msg::PoseStamped default_pose;
   default_pose.header.frame_id = "map";
   default_pose.header.stamp = node()->now();
-  default_pose.pose.position.x = 1.33;  // X 坐标
-  default_pose.pose.position.y = 0.10;  // Y 坐标
+  default_pose.pose.position.x = 0.51;  // X 坐标
+  default_pose.pose.position.y = 0.897;  // Y 坐标
   default_pose.pose.position.z = 0.0;  // 平面移动通常 Z 为 0
   default_pose.pose.orientation.w = 1.0; 
 
   geometry_msgs::msg::PoseStamped center_goal;
   center_goal.header.frame_id = "map";
   center_goal.header.stamp = node()->now();
-  center_goal.pose.position.x = -0.33;  // X 坐标
-  center_goal.pose.position.y = -0.10;  // Y 坐标
+  center_goal.pose.position.x = 8.67;  // X 坐标
+  center_goal.pose.position.y = 0.192;  // Y 坐标
   center_goal.pose.position.z = 0.0;  // 平面移动通常 Z 为 0
   center_goal.pose.orientation.w = 1.0; 
   //std::string default_pose = "-3.0;3.0;0.0"; 
   //std::string center_goal = "-1.0;-1.0;0.0";
   // 强行写入全局黑板
+  std::cout<<" center_goal写入全局黑板"<<std::endl;
   globalBlackboard()->set("default_pose", default_pose);
   globalBlackboard()->set("center_goal", center_goal);
   return true;

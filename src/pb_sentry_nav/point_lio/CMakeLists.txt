@@ -62,6 +62,13 @@ if(OPENMP_FOUND)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
 endif()
 
+# 在 project 之后，add_executable 之前
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  # 增加 -march=native
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=native -pthread -fexceptions")
+  message(STATUS "Enabling Hardware Acceleration: -march=native")
+endif()
+
 include_directories(
   include
   ${EIGEN3_INCLUDE_DIR}

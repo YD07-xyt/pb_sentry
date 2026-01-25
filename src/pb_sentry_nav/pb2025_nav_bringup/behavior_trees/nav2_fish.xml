@@ -10,9 +10,7 @@
         <RateController hz="2">
           <RecoveryNode number_of_retries="1" name="ComputePathToPose">
             <Sequence name="ComputeAndSmoothPath">
-                <GoalUpdater input_goal="{goal}" output_goal="{updated_goal}">
-                    <ComputePathToPose goal="{updated_goal}" path="{path}" planner_id="GridBased"/>
-                </GoalUpdater>
+                    <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
                 <SmoothPath unsmoothed_path="{path}" smoothed_path="{smoothed_path}"/>
             </Sequence>
 

@@ -8,7 +8,8 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, eith
+// er express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
@@ -29,7 +30,7 @@ SentryBehaviorClient::SentryBehaviorClient(const rclcpp::NodeOptions & options)
   get_parameter("target_tree", target_tree_);
 
   action_client_ = rclcpp_action::create_client<BTExecuteTree>(this, "pb2025_sentry_behavior");
-
+  goal_state_pub_ = this->create_publisher<pb_rm_interfaces::msg::NavGoal>("goal_state_topic",10);
   if (!action_client_->wait_for_action_server()) {
     RCLCPP_ERROR(get_logger(), "Action server not available!");
     return;
@@ -59,22 +60,29 @@ void SentryBehaviorClient::sendGoal()
 
 void SentryBehaviorClient::resultCallback(
   const rclcpp_action::ClientGoalHandle<BTExecuteTree>::WrappedResult & result)
-{
+{ 
+  auto goal =std::make_unique<pb_rm_interfaces::msg::NavGoal>();
   switch (result.code) {
     case rclcpp_action::ResultCode::SUCCEEDED:
       RCLCPP_INFO(get_logger(), "Goal succeeded: %s", result.result->return_message.c_str());
+      goal->goal_state = 1;
       break;
     case rclcpp_action::ResultCode::CANCELED:
       RCLCPP_WARN(get_logger(), "Goal was canceled.");
+      goal->goal_state =2;
       break;
     case rclcpp_action::ResultCode::ABORTED:
       RCLCPP_ERROR(get_logger(), "Goal failed: %s", result.result->return_message.c_str());
+      goal->goal_state =0;
       break;
     case rclcpp_action::ResultCode::UNKNOWN:
-      break;
-  }
+      break; 
+  }    
+  goal_state_pub_->publish(std::move(goal));
+  std::cout<<"goal pub 成功"<<std::endl;
   timer_->reset();
 }
+
 
 void SentryBehaviorClient::feedbackCallback(
   rclcpp_action::ClientGoalHandle<BTExecuteTree>::SharedPtr /*goal_handle*/,

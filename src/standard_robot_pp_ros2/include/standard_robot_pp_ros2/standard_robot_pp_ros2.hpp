@@ -32,6 +32,7 @@
 #include "pb_rm_interfaces/msg/rfid_status.hpp"
 #include "pb_rm_interfaces/msg/robot_state_info.hpp"
 #include "pb_rm_interfaces/msg/robot_status.hpp"
+#include "pb_rm_interfaces/msg/nav_goal.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/imu.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
@@ -39,6 +40,11 @@
 #include "standard_robot_pp_ros2/packet_typedef.hpp"
 #include "standard_robot_pp_ros2/robot_info.hpp"
 
+#include "action_msgs/msg/goal_status_array.hpp"
+#include "nav2_msgs/action/navigate_to_pose.hpp"
+#include "rclcpp_action/rclcpp_action.hpp"
+using NavigateToPose = nav2_msgs::action::NavigateToPose;
+using GoalHandleNav = rclcpp_action::ClientGoalHandle<NavigateToPose>;
 namespace standard_robot_pp_ros2
 {
 class StandardRobotPpRos2Node : public rclcpp::Node
@@ -61,7 +67,7 @@ private:
   std::thread receive_thread_;
   std::thread send_thread_;
   std::thread serial_port_protect_thread_;
-
+  int last_action_status_ = -1;
   // Publish
   rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_pub_;
   rclcpp::Publisher<pb_rm_interfaces::msg::RobotStateInfo>::SharedPtr robot_state_info_pub_;
@@ -81,12 +87,16 @@ private:
   rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr cmd_gimbal_joint_sub_;
   rclcpp::Subscription<example_interfaces::msg::UInt8>::SharedPtr cmd_shoot_sub_;
   rclcpp::Subscription<auto_aim_interfaces::msg::Target>::SharedPtr cmd_tracking_sub_;
+  rclcpp::Subscription<pb_rm_interfaces::msg::NavGoal>::SharedPtr goal_state_sub_;
 
   RobotModels robot_models_;
   std::unordered_map<std::string, rclcpp::Publisher<example_interfaces::msg::Float64>::SharedPtr>
     debug_pub_map_;
 
   SendRobotCmdData send_robot_cmd_data_;
+
+  uint8_t goal_states;
+  void getGoalState(const pb_rm_interfaces::msg::NavGoal::SharedPtr goal_state);
 
   void getParams();
   void createPublisher();
@@ -117,6 +127,15 @@ private:
   void setParam(const rclcpp::Parameter & param);
   bool getDetectColor(uint8_t robot_id, uint8_t & color);
   bool callTriggerService(const std::string & service_name);
+
+  /// goal 
+  rclcpp::Subscription<action_msgs::msg::GoalStatusArray>::SharedPtr action_status_sub_;
+  void actionStatusCallback(const action_msgs::msg::GoalStatusArray::SharedPtr msg);
+  rclcpp::TimerBase::SharedPtr timer_;
+  void action_client_callback();
+  void result_callback(const GoalHandleNav::WrappedResult & result);
+  rclcpp_action::Client<NavigateToPose>::SharedPtr goal_client_ptr_;
+
 
   // Param client to set detect_color
   using ResultFuturePtr = std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>>;

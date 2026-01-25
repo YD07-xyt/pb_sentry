@@ -22,6 +22,8 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/client.hpp"
 
+#include "pb_rm_interfaces/msg/nav_goal.hpp"
+
 namespace pb2025_sentry_behavior {
 
 class SentryBehaviorClient : public rclcpp::Node {
@@ -52,6 +54,8 @@ private:
   rclcpp::TimerBase::SharedPtr timer_;
   rclcpp_action::Client<BTExecuteTree>::SharedPtr action_client_;
   std::string target_tree_;
+  
+  rclcpp::Publisher<pb_rm_interfaces::msg::NavGoal>::SharedPtr goal_state_pub_;
 };
 
 } // namespace pb2025_sentry_behavior

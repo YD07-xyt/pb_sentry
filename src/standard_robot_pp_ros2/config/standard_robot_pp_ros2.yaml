@@ -1,6 +1,6 @@
 standard_robot_pp_ros2:
   ros__parameters:
-    device_name: /dev/serial0
+    device_name: /dev/serial_nav
     baud_rate: 115200
     flow_control: none
     parity: none

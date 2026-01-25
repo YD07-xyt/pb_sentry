@@ -484,8 +484,8 @@ int main(int argc, char ** argv)
       {
         time_seq = time_compressing<int>(feats_down_body);
         feats_down_size = feats_down_body->points.size();
-      }
-
+      } 
+      /// 石
       if (!p_imu->after_imu_init_)  // !p_imu->UseLIInit &&
       {
         if (!p_imu->imu_need_init_) {
@@ -505,11 +505,13 @@ int main(int argc, char ** argv)
           // kf_output.x_.rot; //.normalize();
           kf_output.x_.acc = -rot_init.transpose() * kf_output.x_.gravity;
         } else {
+          RCLCPP_ERROR(LOGGER,"POINT_LIO get imu 失败");
           continue;
         }
       }
       /*** initialize the map ***/
       if (!init_map) {
+        RCLCPP_INFO(LOGGER,"Point lio 开始 init map");
         feats_down_world->resize(feats_undistort->size());
         for (int i = 0; i < feats_undistort->size(); i++) {
           {

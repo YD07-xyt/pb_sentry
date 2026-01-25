@@ -129,22 +129,36 @@ const uint16_t W_CRC_TABLE[256] = {
   * @param[in]      wCRC:初始CRC16
   * @retval         计算完的CRC16
   */
+// uint16_t get_CRC16_check_sum(uint8_t * pch_message, uint32_t dw_length, uint16_t wCRC)
+// {
+//   std::cout<<" 初始CRC16:  "<<wCRC<<std::endl;
+//   uint8_t ch_data;
+//   if (pch_message == nullptr) {
+//     return 0xFFFF;
+//   }
+//   while (dw_length--) {
+//     ch_data = *pch_message++;
+//     (wCRC) =
+//       ((uint16_t)(wCRC) >> 8) ^ W_CRC_TABLE[((uint16_t)(wCRC) ^ (uint16_t)(ch_data)) & 0x00ff];
+//   }
+//   std::cout<<" 计算完的CRC16:  "<<wCRC<<std::endl;
+//   return wCRC;
+// }
 uint16_t get_CRC16_check_sum(uint8_t * pch_message, uint32_t dw_length, uint16_t wCRC)
 {
-  //std::cout<<" 初始CRC16:  "<<wCRC<<std::endl;
-  uint8_t ch_data;
-  if (pch_message == nullptr) {
-    return 0xFFFF;
-  }
+   //printf("初始 CRC16 (十六进制): 0x%04X\n", wCRC);
+  if (pch_message == nullptr) return 0xFFFF;
+
   while (dw_length--) {
-    ch_data = *pch_message++;
-    (wCRC) =
-      ((uint16_t)(wCRC) >> 8) ^ W_CRC_TABLE[((uint16_t)(wCRC) ^ (uint16_t)(ch_data)) & 0x00ff];
+    uint8_t ch_data = *pch_message++;
+    wCRC = (wCRC >> 8) ^ W_CRC_TABLE[(wCRC ^ ch_data) & 0x00ff];
   }
-  //std::cout<<" 计算完的CRC16:  "<<wCRC<<std::endl;
+
+  // 使用 printf 打印，%04X 会自动按 0xHHL 格式输出（高位在前）
+  //printf("计算完的 CRC16 (十六进制): 0x%04X\n", wCRC);
+  
   return wCRC;
 }
-
 /**
   * @brief          CRC16校验函数
   * @param[in]      pch_message: 数据
@@ -181,11 +195,11 @@ void append_CRC16_check_sum(uint8_t * pchMessage, uint32_t dwLength)
 }
 // 以下是对std::vector<uint8_t>的重载
 
-/**
-  * @brief          CRC16校验函数
-  * @param[in]      pch_message: 数据+crc16校验码
-  * @retval         真或者假
-  */
+// /**
+//   * @brief          CRC16校验函数
+//   * @param[in]      pch_message: 数据+crc16校验码
+//   * @retval         真或者假
+//   */
 bool verify_CRC16_check_sum(std::vector<uint8_t> & pchMessage)
 {
   if (pchMessage.size() <= 2) {
@@ -194,10 +208,38 @@ bool verify_CRC16_check_sum(std::vector<uint8_t> & pchMessage)
   uint16_t w_expected = 0;
   uint32_t dw_length = pchMessage.size();
   w_expected = get_CRC16_check_sum(pchMessage.data(), dw_length - 2, CRC16_INIT);
-
-  return (
-    (w_expected & 0xff) == pchMessage[dw_length - 2] &&
-    ((w_expected >> 8) & 0xff) == pchMessage[dw_length - 1]);
+  //printf("crc16 Debug : length:%d\n",dw_length - 2);
+  //printf("CRC Debug: Calc[0x%02X]\n", w_expected);
+  // %02X 表示以 16 进制打印，且至少占 2 位，不足补 0
+  //printf("CRC Receive (Hex): %02X %02X\n", pchMessage[dw_length - 2], pchMessage[dw_length - 1]);
+    return (
+      (w_expected & 0xff) == pchMessage[dw_length - 2] &&
+      ((w_expected >> 8) & 0xff) == pchMessage[dw_length - 1]);
 }
 
+
+
+
+// bool verify_CRC16_check_sum(std::vector<uint8_t> & pchMessage)
+// {
+//   if (pchMessage.size() <= 2) {
+//     return false;
+//   }
+
+//   uint32_t dw_length = pchMessage.size();
+  
+//   // 期望的 CRC16
+//   uint16_t w_expected = get_CRC16_check_sum(pchMessage.data(), dw_length - 4, CRC16_INIT);
+
+//   // 从数据包最后两个字节提取实际收到的 CRC16
+//   // 小端序，倒数第2字节是低8位，倒数第1字节是高8位
+//   uint16_t w_actual = (static_cast<uint16_t>(pchMessage[dw_length - 2]) << 8) | 
+//                        static_cast<uint16_t>(pchMessage[dw_length - 3]);
+
+//   // 3. 打印调试信息
+//   // %04X 表示打印 4 位大写十六进制，不足位补 0
+//   printf("CRC16 Debug: Calculated: [0x%04X] | Received: [0x%04X]\n", w_expected, w_actual);
+
+//   return (w_expected == w_actual);
+// }
 }  // namespace crc16
