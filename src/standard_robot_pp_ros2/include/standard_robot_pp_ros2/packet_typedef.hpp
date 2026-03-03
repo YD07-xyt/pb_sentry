@@ -403,6 +403,7 @@ struct SendRobotCmdData {
   HeaderFrame frame_header;
   uint32_t time_stamp;
   uint8_t is_scan;
+  uint8_t sentry_pose;
   struct {
     // 速度
     struct {

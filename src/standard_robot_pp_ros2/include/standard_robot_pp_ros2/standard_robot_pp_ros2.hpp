@@ -43,6 +43,11 @@
 #include "action_msgs/msg/goal_status_array.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
+
+
+//sentry_pose
+#include"sentry_pose.hpp"
+
 using NavigateToPose = nav2_msgs::action::NavigateToPose;
 using GoalHandleNav = rclcpp_action::ClientGoalHandle<NavigateToPose>;
 namespace standard_robot_pp_ros2 {
@@ -167,6 +172,12 @@ private:
 
   float last_hp_;
   float last_gimbal_pitch_odom_joint_, last_gimbal_yaw_odom_joint_;
+
+    //sentry_pose
+    int sentry_hp=400;
+    bool is_in_game=false;
+    void transform_sentry_pose();
+
 };
 } // namespace standard_robot_pp_ros2
 

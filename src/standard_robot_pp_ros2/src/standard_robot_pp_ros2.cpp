@@ -16,9 +16,11 @@
 
 #include "standard_robot_pp_ros2/crc8_crc16.hpp"
 #include "standard_robot_pp_ros2/packet_typedef.hpp"
+#include "standard_robot_pp_ros2/sentry_pose.hpp"
 #include "std_srvs/srv/trigger.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include <algorithm>
+#include <cstdio>
 #include <memory>
 #include <rclcpp/logging.hpp>
 
@@ -145,6 +147,7 @@ void StandardRobotPpRos2Node::createSubscription() {
       "cmd_shoot", 10,
       std::bind(&StandardRobotPpRos2Node::cmdShootCallback, this,
                 std::placeholders::_1));
+
   cmd_tracking_sub_ =
       this->create_subscription<auto_aim_interfaces::msg::Target>(
           "tracker/target", 10,
@@ -514,6 +517,7 @@ void StandardRobotPpRos2Node::receiveData() {
       is_usb_ok_ = false;
     }
   }
+  transform_sentry_pose();
 }
 
 void StandardRobotPpRos2Node::publishDebugData(
@@ -647,6 +651,16 @@ void StandardRobotPpRos2Node::publishGameStatus(
   // %d",game_status.data.game_progress);
   // RCLCPP_INFO(get_logger(),"stage_remain_time:
   // %d",game_status.data.stage_remain_time);
+
+  //sentry_pose
+  if(msg.game_progress==4){
+    is_in_game=true;
+  }else{
+    is_in_game=false;
+  }
+
+  //=================
+  
   game_status_pub_->publish(msg);
 
   if (record_rosbag_ &&
@@ -785,6 +799,8 @@ void StandardRobotPpRos2Node::publishRobotStatus(
     msg.is_hp_deduced = true;
   }
   last_hp_ = robot_status.data.current_up;
+  //sentry_pose
+  sentry_hp=robot_status.data.current_up;
 
   robot_status_pub_->publish(msg);
 
@@ -826,6 +842,7 @@ void StandardRobotPpRos2Node::sendData() {
   send_robot_cmd_data_.frame_header.id = ID_ROBOT_CMD;
   send_robot_cmd_data_.frame_header.len = sizeof(SendRobotCmdData) - 6;
   send_robot_cmd_data_.is_scan = 0;
+  send_robot_cmd_data_.sentry_pose = 0;
   send_robot_cmd_data_.data.speed_vector.vx = 0;
   send_robot_cmd_data_.data.speed_vector.vy = 0;
   send_robot_cmd_data_.data.speed_vector.wz = 0;
@@ -885,6 +902,26 @@ void StandardRobotPpRos2Node::sendData() {
     std::this_thread::sleep_for(std::chrono::milliseconds(5));
   }
 }
+
+void StandardRobotPpRos2Node::transform_sentry_pose(){
+    if(!is_in_game){
+      return;
+    }
+    if(sentry_hp>400||sentry_hp<0){
+      printf("sentry<400||>0"); 
+      return;
+    }
+    rmDecision::PosTransform pos_transform(sentry_hp,is_in_game);
+    rmDecision::SentryPose sentrypose = pos_transform.pos_to_new();
+    if(sentrypose==rmDecision::SentryPose::Move){
+      send_robot_cmd_data_.sentry_pose = 0;
+    }else if (sentrypose==rmDecision::SentryPose::Defend) {
+      send_robot_cmd_data_.sentry_pose=1;
+    }else if (sentrypose==rmDecision::SentryPose::Attack) {
+      send_robot_cmd_data_.sentry_pose=2;
+    }
+}
+
 
 void StandardRobotPpRos2Node::actionStatusCallback(
     const action_msgs::msg::GoalStatusArray::SharedPtr msg) {
