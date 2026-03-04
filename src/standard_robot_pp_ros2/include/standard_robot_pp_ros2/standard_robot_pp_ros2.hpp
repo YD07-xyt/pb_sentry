@@ -43,11 +43,6 @@
 #include "action_msgs/msg/goal_status_array.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
-
-
-//sentry_pose
-#include"sentry_pose.hpp"
-
 using NavigateToPose = nav2_msgs::action::NavigateToPose;
 using GoalHandleNav = rclcpp_action::ClientGoalHandle<NavigateToPose>;
 namespace standard_robot_pp_ros2 {
