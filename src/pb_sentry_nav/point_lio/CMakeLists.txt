@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.8)
 project(point_lio)
 
 if(NOT CMAKE_BUILD_TYPE)

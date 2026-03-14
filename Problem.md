@@ -114,9 +114,3 @@ chmod +x run.sh
 ```bash
 sudo ufw disable
 ```
-
-
-https://docker.1ms.run 
-https://docker.m.daocloud.io/ 
-https://docker.1panel.live/ https://hub.rat.dev/ https://docker.1ms.run/ https://docker.xuanyuan.me/ https://dislabaiot.xyz/ https://doublezonline.cloud/ https://xdark.top/
-

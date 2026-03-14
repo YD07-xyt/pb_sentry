@@ -29,10 +29,10 @@
 #include "pb_rm_interfaces/msg/game_robot_hp.hpp"
 #include "pb_rm_interfaces/msg/game_status.hpp"
 #include "pb_rm_interfaces/msg/ground_robot_position.hpp"
-#include "pb_rm_interfaces/msg/nav_goal.hpp"
 #include "pb_rm_interfaces/msg/rfid_status.hpp"
 #include "pb_rm_interfaces/msg/robot_state_info.hpp"
 #include "pb_rm_interfaces/msg/robot_status.hpp"
+#include "pb_rm_interfaces/msg/nav_goal.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/imu.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
@@ -45,24 +45,22 @@
 #include "rclcpp_action/rclcpp_action.hpp"
 using NavigateToPose = nav2_msgs::action::NavigateToPose;
 using GoalHandleNav = rclcpp_action::ClientGoalHandle<NavigateToPose>;
-namespace standard_robot_pp_ros2 {
-class StandardRobotPpRos2Node : public rclcpp::Node {
+namespace standard_robot_pp_ros2
+{
+class StandardRobotPpRos2Node : public rclcpp::Node
+{
 public:
-  explicit StandardRobotPpRos2Node(const rclcpp::NodeOptions &options);
+  explicit StandardRobotPpRos2Node(const rclcpp::NodeOptions & options);
 
   ~StandardRobotPpRos2Node() override;
 
 private:
   bool is_usb_ok_;
-  bool is_usb_ok2_;
-  bool is_two_serial;
   bool debug_;
   std::unique_ptr<IoContext> owned_ctx_;
   std::string device_name_;
-  std::string device_name2_;
   std::unique_ptr<drivers::serial_driver::SerialPortConfig> device_config_;
   std::unique_ptr<drivers::serial_driver::SerialDriver> serial_driver_;
-  std::unique_ptr<drivers::serial_driver::SerialDriver> serial_driver2_;
   bool record_rosbag_;
   bool set_detector_color_;
 
@@ -72,40 +70,28 @@ private:
   int last_action_status_ = -1;
   // Publish
   rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_pub_;
-  rclcpp::Publisher<pb_rm_interfaces::msg::RobotStateInfo>::SharedPtr
-      robot_state_info_pub_;
-  rclcpp::Publisher<pb_rm_interfaces::msg::EventData>::SharedPtr
-      event_data_pub_;
-  rclcpp::Publisher<pb_rm_interfaces::msg::GameRobotHP>::SharedPtr
-      all_robot_hp_pub_;
-  rclcpp::Publisher<pb_rm_interfaces::msg::GameStatus>::SharedPtr
-      game_status_pub_;
+  rclcpp::Publisher<pb_rm_interfaces::msg::RobotStateInfo>::SharedPtr robot_state_info_pub_;
+  rclcpp::Publisher<pb_rm_interfaces::msg::EventData>::SharedPtr event_data_pub_;
+  rclcpp::Publisher<pb_rm_interfaces::msg::GameRobotHP>::SharedPtr all_robot_hp_pub_;
+  rclcpp::Publisher<pb_rm_interfaces::msg::GameStatus>::SharedPtr game_status_pub_;
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr robot_motion_pub_;
   rclcpp::Publisher<pb_rm_interfaces::msg::GroundRobotPosition>::SharedPtr
-      ground_robot_position_pub_;
-  rclcpp::Publisher<pb_rm_interfaces::msg::RfidStatus>::SharedPtr
-      rfid_status_pub_;
-  rclcpp::Publisher<pb_rm_interfaces::msg::RobotStatus>::SharedPtr
-      robot_status_pub_;
+    ground_robot_position_pub_;
+  rclcpp::Publisher<pb_rm_interfaces::msg::RfidStatus>::SharedPtr rfid_status_pub_;
+  rclcpp::Publisher<pb_rm_interfaces::msg::RobotStatus>::SharedPtr robot_status_pub_;
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_state_pub_;
   rclcpp::Publisher<pb_rm_interfaces::msg::Buff>::SharedPtr buff_pub_;
 
   // Subscribe
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_sub_;
-  rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr
-      cmd_gimbal_joint_sub_;
-  rclcpp::Subscription<example_interfaces::msg::UInt8>::SharedPtr
-      cmd_shoot_sub_;
-  rclcpp::Subscription<auto_aim_interfaces::msg::Target>::SharedPtr
-      cmd_tracking_sub_;
-  rclcpp::Subscription<pb_rm_interfaces::msg::NavGoal>::SharedPtr
-      goal_state_sub_;
+  rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr cmd_gimbal_joint_sub_;
+  rclcpp::Subscription<example_interfaces::msg::UInt8>::SharedPtr cmd_shoot_sub_;
+  rclcpp::Subscription<auto_aim_interfaces::msg::Target>::SharedPtr cmd_tracking_sub_;
+  rclcpp::Subscription<pb_rm_interfaces::msg::NavGoal>::SharedPtr goal_state_sub_;
 
   RobotModels robot_models_;
-  std::unordered_map<
-      std::string,
-      rclcpp::Publisher<example_interfaces::msg::Float64>::SharedPtr>
-      debug_pub_map_;
+  std::unordered_map<std::string, rclcpp::Publisher<example_interfaces::msg::Float64>::SharedPtr>
+    debug_pub_map_;
 
   SendRobotCmdData send_robot_cmd_data_;
 
@@ -115,48 +101,44 @@ private:
   void getParams();
   void createPublisher();
   void createSubscription();
-  void createNewDebugPublisher(const std::string &name);
+  void createNewDebugPublisher(const std::string & name);
   void receiveData();
   void sendData();
   void serialPortProtect();
 
-  void publishDebugData(ReceiveDebugData &data);
-  void publishImuData(ReceiveImuData &data);
-  void publishRobotInfo(ReceiveRobotInfoData &data);
-  void publishEventData(ReceiveEventData &data);
-  void publishAllRobotHp(ReceiveAllRobotHpData &data);
-  void publishGameStatus(ReceiveGameStatusData &data);
-  void publishRobotMotion(ReceiveRobotMotionData &data);
-  void publishGroundRobotPosition(ReceiveGroundRobotPosition &data);
-  void publishRfidStatus(ReceiveRfidStatus &data);
-  void publishRobotStatus(ReceiveRobotStatus &data);
-  void publishJointState(ReceiveJointState &data);
-  void publishBuff(ReceiveBuff &data);
+  void publishDebugData(ReceiveDebugData & data);
+  void publishImuData(ReceiveImuData & data);
+  void publishRobotInfo(ReceiveRobotInfoData & data);
+  void publishEventData(ReceiveEventData & data);
+  void publishAllRobotHp(ReceiveAllRobotHpData & data);
+  void publishGameStatus(ReceiveGameStatusData & data);
+  void publishRobotMotion(ReceiveRobotMotionData & data);
+  void publishGroundRobotPosition(ReceiveGroundRobotPosition & data);
+  void publishRfidStatus(ReceiveRfidStatus & data);
+  void publishRobotStatus(ReceiveRobotStatus & data);
+  void publishJointState(ReceiveJointState & data);
+  void publishBuff(ReceiveBuff & data);
 
   void cmdVelCallback(const geometry_msgs::msg::Twist::SharedPtr msg);
-  void
-  cmdGimbalJointCallback(const sensor_msgs::msg::JointState::SharedPtr msg);
+  void cmdGimbalJointCallback(const sensor_msgs::msg::JointState::SharedPtr msg);
   void cmdShootCallback(const example_interfaces::msg::UInt8::SharedPtr msg);
-  void
-  visionTargetCallback(const auto_aim_interfaces::msg::Target::SharedPtr msg);
+  void visionTargetCallback(const auto_aim_interfaces::msg::Target::SharedPtr msg);
 
-  void setParam(const rclcpp::Parameter &param);
-  bool getDetectColor(uint8_t robot_id, uint8_t &color);
-  bool callTriggerService(const std::string &service_name);
+  void setParam(const rclcpp::Parameter & param);
+  bool getDetectColor(uint8_t robot_id, uint8_t & color);
+  bool callTriggerService(const std::string & service_name);
 
-  /// goal
-  rclcpp::Subscription<action_msgs::msg::GoalStatusArray>::SharedPtr
-      action_status_sub_;
-  void
-  actionStatusCallback(const action_msgs::msg::GoalStatusArray::SharedPtr msg);
+  /// goal 
+  rclcpp::Subscription<action_msgs::msg::GoalStatusArray>::SharedPtr action_status_sub_;
+  void actionStatusCallback(const action_msgs::msg::GoalStatusArray::SharedPtr msg);
   rclcpp::TimerBase::SharedPtr timer_;
   void action_client_callback();
-  void result_callback(const GoalHandleNav::WrappedResult &result);
+  void result_callback(const GoalHandleNav::WrappedResult & result);
   rclcpp_action::Client<NavigateToPose>::SharedPtr goal_client_ptr_;
 
+
   // Param client to set detect_color
-  using ResultFuturePtr =
-      std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>>;
+  using ResultFuturePtr = std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>>;
   bool initial_set_param_ = false;
   uint8_t previous_receive_color_ = 0;
   rclcpp::AsyncParametersClient::SharedPtr detector_param_client_;
@@ -174,6 +156,6 @@ private:
     void transform_sentry_pose();
 
 };
-} // namespace standard_robot_pp_ros2
+}  // namespace standard_robot_pp_ros2
 
-#endif // STANDARD_ROBOT_PP_ROS2__STANDARD_ROBOT_PP_ROS2_HPP_
+#endif  // STANDARD_ROBOT_PP_ROS2__STANDARD_ROBOT_PP_ROS2_HPP_
