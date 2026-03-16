@@ -79,16 +79,16 @@ bool SentryBehaviorServer::onGoalReceived(
   geometry_msgs::msg::PoseStamped default_pose;
   default_pose.header.frame_id = "map";
   default_pose.header.stamp = node()->now();
-  default_pose.pose.position.x = 0.51;  // X 坐标
-  default_pose.pose.position.y = 0.897;  // Y 坐标
+  default_pose.pose.position.x = -0.043;  // X 坐标
+  default_pose.pose.position.y = -0.018;  // Y 坐标
   default_pose.pose.position.z = 0.0;  // 平面移动通常 Z 为 0
   default_pose.pose.orientation.w = 1.0; 
 
   geometry_msgs::msg::PoseStamped center_goal;
   center_goal.header.frame_id = "map";
   center_goal.header.stamp = node()->now();
-  center_goal.pose.position.x = 8.67;  // X 坐标
-  center_goal.pose.position.y = 0.192;  // Y 坐标
+  center_goal.pose.position.x = 2.02;  // X 坐标
+  center_goal.pose.position.y = 0.148;  // Y 坐标
   center_goal.pose.position.z = 0.0;  // 平面移动通常 Z 为 0
   center_goal.pose.orientation.w = 1.0; 
   //std::string default_pose = "-3.0;3.0;0.0"; 

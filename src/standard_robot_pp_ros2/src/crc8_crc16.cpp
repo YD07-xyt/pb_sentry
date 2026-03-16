@@ -208,10 +208,10 @@ bool verify_CRC16_check_sum(std::vector<uint8_t> & pchMessage)
   uint16_t w_expected = 0;
   uint32_t dw_length = pchMessage.size();
   w_expected = get_CRC16_check_sum(pchMessage.data(), dw_length - 2, CRC16_INIT);
-  //printf("crc16 Debug : length:%d\n",dw_length - 2);
-  //printf("CRC Debug: Calc[0x%02X]\n", w_expected);
-  // %02X 表示以 16 进制打印，且至少占 2 位，不足补 0
-  //printf("CRC Receive (Hex): %02X %02X\n", pchMessage[dw_length - 2], pchMessage[dw_length - 1]);
+  // printf("crc16 Debug : length:%d\n",dw_length - 2);
+  // printf("CRC Debug: Calc[0x%02X]\n", w_expected);
+  //  //%02X 表示以 16 进制打印，且至少占 2 位，不足补 0
+  // printf("CRC Receive (Hex): %02X %02X\n", pchMessage[dw_length - 2], pchMessage[dw_length - 1]);
     return (
       (w_expected & 0xff) == pchMessage[dw_length - 2] &&
       ((w_expected >> 8) & 0xff) == pchMessage[dw_length - 1]);

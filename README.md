@@ -7,6 +7,7 @@
 wget http://fishros.com/install -O fishros && . fishros 
 rosdepc install -r --from-paths src --ignore-src --rosdistro $ROS_DISTRO -y
 ```
+
 ```bash
 # 更新软件源索引
 sudo apt update

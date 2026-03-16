@@ -35,7 +35,8 @@ namespace standard_robot_pp_ros2 {
 StandardRobotPpRos2Node::StandardRobotPpRos2Node(
     const rclcpp::NodeOptions &options)
     : Node("StandardRobotPpRos2Node", options), owned_ctx_{new IoContext(2)},
-      serial_driver_{new drivers::serial_driver::SerialDriver(*owned_ctx_)} {
+      serial_driver_{new drivers::serial_driver::SerialDriver(*owned_ctx_)},
+      serial_driver2_{new drivers::serial_driver::SerialDriver(*owned_ctx_)} {
   RCLCPP_INFO(get_logger(), "Start StandardRobotPpRos2Node!");
 
   getParams();
@@ -180,8 +181,8 @@ void StandardRobotPpRos2Node::getParams() {
     RCLCPP_ERROR(get_logger(), "The is_two_serial provided was invalid");
   }
   try {
-    device_name_ = declare_parameter<std::string>("device_name", "");
-    device_name2_ = declare_parameter<std::string>("device_name2", "");
+    device_name_ = declare_parameter<std::string>("device_name", "/dev/ttyUSB2");
+    device_name2_ = declare_parameter<std::string>("device_name2", "/dev/ttyUSB0");
   } catch (rclcpp::ParameterTypeException &ex) {
     RCLCPP_ERROR(get_logger(), "The device name provided was invalid");
     throw ex;
@@ -195,7 +196,7 @@ void StandardRobotPpRos2Node::getParams() {
   }
 
   try {
-    const auto fc_string = declare_parameter<std::string>("flow_control", "");
+    const auto fc_string = declare_parameter<std::string>("flow_control", "none");
 
     if (fc_string == "none") {
       fc = FlowControl::NONE;
@@ -213,7 +214,7 @@ void StandardRobotPpRos2Node::getParams() {
   }
 
   try {
-    const auto pt_string = declare_parameter<std::string>("parity", "");
+    const auto pt_string = declare_parameter<std::string>("parity", "none");
 
     if (pt_string == "none") {
       pt = Parity::NONE;
@@ -231,7 +232,7 @@ void StandardRobotPpRos2Node::getParams() {
   }
 
   try {
-    const auto sb_string = declare_parameter<std::string>("stop_bits", "");
+    const auto sb_string = declare_parameter<std::string>("stop_bits", "1");
 
     if (sb_string == "1" || sb_string == "1.0") {
       sb = StopBits::ONE;
@@ -265,8 +266,16 @@ void StandardRobotPpRos2Node::serialPortProtect() {
   // @TODO: 1.保持串口连接 2.串口断开重连 3.串口异常处理
 
   // 初始化串口
+  try{
   serial_driver_->init_port(device_name_, *device_config_);
+  } catch(const std::exception &ex){
+    RCLCPP_ERROR(get_logger(),"ERROR init serial_driver1");
+  }
+  try{
   serial_driver2_->init_port(device_name2_, *device_config_);
+  }   catch(const std::exception &ex){
+    RCLCPP_ERROR(get_logger(),"ERROR init serial_driver1");
+  }
   // 尝试打开串口
   try {
     if (!serial_driver_->port()->is_open()) {
@@ -289,8 +298,8 @@ void StandardRobotPpRos2Node::serialPortProtect() {
     is_usb_ok2_ = false;
   }
 
-  is_usb_ok_ = true;
-  is_usb_ok2_ = true;
+  // is_usb_ok_ = true;
+  // is_usb_ok2_ = true;
   std::this_thread::sleep_for(
       std::chrono::milliseconds(USB_PROTECT_SLEEP_TIME));
 
@@ -373,7 +382,7 @@ void StandardRobotPpRos2Node::receiveData() {
       sof_count = 0;
 
       // sof[0] == SOF_RECEIVE 后读取剩余 header_frame 内容
-      std::vector<uint8_t> header_frame_buf(3); // sof 在读取完数据后添加
+      std::vector<uint8_t> header_frame_buf(4); // sof 在读取完数据后添加
 
       serial_driver_->port()->receive(
           header_frame_buf); // 读取除 sof 外剩下的数据
@@ -384,21 +393,25 @@ void StandardRobotPpRos2Node::receiveData() {
       bool crc8_ok = crc8::verify_CRC8_check_sum(
           reinterpret_cast<uint8_t *>(&header_frame), sizeof(header_frame));
       if (crc8_ok == 0) {
-        RCLCPP_ERROR(get_logger(), "Header frame CRC8 error!");
-        RCLCPP_ERROR(get_logger(),
-                     "帧头 CRC8 校验失败! 尝试解析的 ID: 0x%02X, 数据长度: %d, "
-                     "SOF: 0x%02X",
-                     header_frame.id, header_frame.len, header_frame.sof);
+        // RCLCPP_ERROR(get_logger(), "Header frame CRC8 error!");
+        // RCLCPP_ERROR(get_logger(),
+        //              "帧头 CRC8 校验失败! 尝试解析的 ID: 0x%02X, 数据长度: %d, "
+        //              "SOF: 0x%02X",
+        //              header_frame.id, header_frame.len, header_frame.sof);
         continue;
       }
+      //RCLCPP_INFO(get_logger(),"帧头 CRC8 校验成功");
+      int rest_len = header_frame.len+4;
       // crc8_ok 校验正确后读取数据段
       // 根据数据段长度读取数据
-      std::vector<uint8_t> data_buf(header_frame.len); // len + crc
+      std::vector<uint8_t> data_buf(rest_len); // len + crc
       int received_len = serial_driver_->port()->receive(data_buf);
       int received_len_sum = received_len;
+      
+      
       // 考虑到一次性读取数据可能存在数据量过大，读取不完整的情况。需要检测是否读取完整
       // 计算剩余未读取的数据长度
-      int remain_len = header_frame.len - received_len;
+      int remain_len = rest_len - received_len;
       while (remain_len > 0) { // 读取剩余未读取的数据
         std::vector<uint8_t> remain_buf(remain_len);
         received_len = serial_driver_->port()->receive(remain_buf);
@@ -407,6 +420,9 @@ void StandardRobotPpRos2Node::receiveData() {
         received_len_sum += received_len;
         remain_len -= received_len;
       }
+
+
+      uint16_t id = *reinterpret_cast<uint16_t *>(data_buf.data());
 
       // 数据段读取完成后添加 header_frame_buf 到 data_buf，得到完整数据包
       data_buf.insert(data_buf.begin(), header_frame_buf.begin(),
@@ -429,7 +445,7 @@ void StandardRobotPpRos2Node::receiveData() {
         continue;
       }
 
-      // printf("CRC Debug: Recv[0x%02X]\n");
+      //printf("CRC Debug: Recv[0x%X]\n");
       //  整包数据校验
       bool crc16_ok = crc16::verify_CRC16_check_sum(data_buf);
       if (!crc16_ok) {
@@ -437,40 +453,27 @@ void StandardRobotPpRos2Node::receiveData() {
         RCLCPP_ERROR(get_logger(),
                      "帧头 CRC16 校验失败! 尝试解析的 ID: 0x%02X, 数据长度: "
                      "%d, SOF: 0x%02X",
-                     header_frame.id, header_frame.len, header_frame.sof);
+                     id, header_frame.len, header_frame.sof);
         continue;
       }
+      
       // if(header_frame.id==ID_ROBOT_STATUS){
       //     ReceiveRobotStatus robot_status_data =
       //     fromVector<ReceiveRobotStatus>(data_buf);
       //     publishRobotStatus(robot_status_data);
       // }
       // crc16_ok 校验正确后根据 header_frame.id 解析数据
-      switch (header_frame.id) {
-      case ID_DEBUG: {
-        ReceiveDebugData debug_data = fromVector<ReceiveDebugData>(data_buf);
-        publishDebugData(debug_data);
-      } break;
+      switch (id) {
       case ID_IMU: {
-        ReceiveImuData imu_data = fromVector<ReceiveImuData>(data_buf);
-        publishImuData(imu_data);
       } break;
       case ID_ROBOT_STATE_INFO: {
-        ReceiveRobotInfoData robot_info_data =
-            fromVector<ReceiveRobotInfoData>(data_buf);
-        publishRobotInfo(robot_info_data);
       } break;
       case ID_EVENT_DATA: {
-        ReceiveEventData event_data = fromVector<ReceiveEventData>(data_buf);
-        publishEventData(event_data);
       } break;
       case ID_PID_DEBUG: {
         RCLCPP_WARN(get_logger(), "Not implemented yet!");
       } break;
       case ID_ALL_ROBOT_HP: {
-        ReceiveAllRobotHpData all_robot_hp_data =
-            fromVector<ReceiveAllRobotHpData>(data_buf);
-        publishAllRobotHp(all_robot_hp_data);
       } break;
       case ID_GAME_STATUS: {
         ReceiveGameStatusData game_status_data =
@@ -478,19 +481,10 @@ void StandardRobotPpRos2Node::receiveData() {
         publishGameStatus(game_status_data);
       } break;
       case ID_ROBOT_MOTION: {
-        ReceiveRobotMotionData robot_motion_data =
-            fromVector<ReceiveRobotMotionData>(data_buf);
-        publishRobotMotion(robot_motion_data);
       } break;
       case ID_GROUND_ROBOT_POSITION: {
-        ReceiveGroundRobotPosition ground_robot_position_data =
-            fromVector<ReceiveGroundRobotPosition>(data_buf);
-        publishGroundRobotPosition(ground_robot_position_data);
       } break;
       case ID_RFID_STATUS: {
-        ReceiveRfidStatus rfid_status_data =
-            fromVector<ReceiveRfidStatus>(data_buf);
-        publishRfidStatus(rfid_status_data);
       } break;
       case ID_ROBOT_STATUS: {
         ReceiveRobotStatus robot_status_data =
@@ -498,16 +492,11 @@ void StandardRobotPpRos2Node::receiveData() {
         publishRobotStatus(robot_status_data);
       } break;
       case ID_JOINT_STATE: {
-        ReceiveJointState joint_state_data =
-            fromVector<ReceiveJointState>(data_buf);
-        publishJointState(joint_state_data);
       } break;
       case ID_BUFF: {
-        ReceiveBuff buff = fromVector<ReceiveBuff>(data_buf);
-        publishBuff(buff);
       } break;
       default: {
-        RCLCPP_WARN(get_logger(), "Invalid id: %d", header_frame.id);
+        //RCLCPP_WARN(get_logger(), "Invalid id: %d", header_frame.id);
       } break;
       }
     } catch (const std::exception &ex) {
@@ -644,12 +633,11 @@ void StandardRobotPpRos2Node::publishGameStatus(
     ReceiveGameStatusData &game_status) {
   pb_rm_interfaces::msg::GameStatus msg;
   msg.game_progress = game_status.data.game_progress;
-  msg.stage_remain_time = game_status.data.stage_remain_time;
-  // RCLCPP_INFO(get_logger(),"game_progress:
-  // %d",game_status.data.game_progress);
-  // RCLCPP_INFO(get_logger(),"stage_remain_time:
-  // %d",game_status.data.stage_remain_time);
-  
+  msg.stage_remain_time = game_status.data.SyncTimeStamp;
+  // RCLCPP_INFO(get_logger(),"game_type:%d",game_status.data.game_type);
+  // RCLCPP_INFO(get_logger(),"game_progress:%d",game_status.data.game_progress);
+  // RCLCPP_INFO(get_logger(),"SyncTimeStamp:%ld",game_status.data.SyncTimeStamp);
+
   //sentry_pose
   if(msg.game_progress==4){
     is_in_game=true;
@@ -664,8 +652,8 @@ void StandardRobotPpRos2Node::publishGameStatus(
   if (record_rosbag_ &&
       game_status.data.game_progress != previous_game_progress_) {
     previous_game_progress_ = game_status.data.game_progress;
-    // RCLCPP_INFO(get_logger(), "Game progress: %d",
-    // game_status.data.game_progress);
+    RCLCPP_INFO(get_logger(), "Game progress: %d",
+    game_status.data.game_progress);
 
     std::string service_name;
     switch (game_status.data.game_progress) {
@@ -774,31 +762,32 @@ void StandardRobotPpRos2Node::publishRobotStatus(
   pb_rm_interfaces::msg::RobotStatus msg;
 
   msg.robot_id = robot_status.data.robot_id;
-  // RCLCPP_INFO(get_logger(),"robot_id :%d" ,robot_status.data.robot_id);
+  //RCLCPP_INFO(get_logger(),"robot_id :%d" ,robot_status.data.robot_id);
   msg.robot_level = robot_status.data.robot_level;
-  msg.current_hp = robot_status.data.current_up;
-  msg.maximum_hp = robot_status.data.maximum_hp;
-  // RCLCPP_INFO(get_logger(),"current_hp :%d" ,robot_status.data.current_up);
-  // RCLCPP_INFO(get_logger(),"maximum_hp :%d" ,robot_status.data.maximum_hp);
+  msg.current_hp = robot_status.data.current_HP;
+  msg.maximum_hp = robot_status.data.maximum_HP;
+   //RCLCPP_INFO(get_logger(),"current_hp :%d" ,robot_status.data.current_HP);
+   //RCLCPP_INFO(get_logger(),"maximum_hp :%d" ,robot_status.data.maximum_HP);
   msg.shooter_barrel_cooling_value =
       robot_status.data.shooter_barrel_cooling_value;
   msg.shooter_barrel_heat_limit = robot_status.data.shooter_barrel_heat_limit;
-  msg.shooter_17mm_1_barrel_heat = robot_status.data.shooter_17mm_1_barrel_heat;
-  msg.robot_pos.position.x = robot_status.data.robot_pos_x;
-  msg.robot_pos.position.y = robot_status.data.robot_pos_y;
-  msg.robot_pos.orientation = tf2::toMsg(tf2::Quaternion(
-      tf2::Vector3(0, 0, 1), robot_status.data.robot_pos_angle));
-  msg.armor_id = robot_status.data.armor_id;
-  msg.hp_deduction_reason = robot_status.data.hp_deduction_reason;
-  msg.projectile_allowance_17mm = robot_status.data.projectile_allowance_17mm;
-  msg.remaining_gold_coin = robot_status.data.remaining_gold_coin;
+  //==========================================================================//
+  // msg.shooter_17mm_1_barrel_heat = robot_status.data.shooter_17mm_1_barrel_heat;
+  // msg.robot_pos.position.x = robot_status.data.robot_pos_x;
+  // msg.robot_pos.position.y = robot_status.data.robot_pos_y;
+  // msg.robot_pos.orientation = tf2::toMsg(tf2::Quaternion(
+  //     tf2::Vector3(0, 0, 1), robot_status.data.robot_pos_angle));
+  // msg.armor_id = robot_status.data.armor_id;
+  // msg.hp_deduction_reason = robot_status.data.hp_deduction_reason;
+  // msg.projectile_allowance_17mm = robot_status.data.projectile_allowance_17mm;
+  // msg.remaining_gold_coin = robot_status.data.remaining_gold_coin;
 
   if (last_hp_ - msg.current_hp > 0) {
     msg.is_hp_deduced = true;
   }
-  last_hp_ = robot_status.data.current_up;
+  last_hp_ = robot_status.data.current_HP;
   //sentry_pose
-  sentry_hp=robot_status.data.current_up;
+  sentry_hp=robot_status.data.current_HP;
 
   robot_status_pub_->publish(msg);
 
@@ -838,16 +827,17 @@ void StandardRobotPpRos2Node::sendData() {
 
   send_robot_cmd_data_.frame_header.sof = SOF_SEND;
   send_robot_cmd_data_.frame_header.id = ID_ROBOT_CMD;
-  send_robot_cmd_data_.frame_header.len = sizeof(SendRobotCmdData) - 6;
+  send_robot_cmd_data_.frame_header.len = sizeof(SendRobotCmdData) - 7;
   send_robot_cmd_data_.is_scan = 0;
-  send_robot_cmd_data_.sentry_pose = 0;
+  send_robot_cmd_data_.sentry_pose = 3;
   send_robot_cmd_data_.data.speed_vector.vx = 0;
   send_robot_cmd_data_.data.speed_vector.vy = 0;
   send_robot_cmd_data_.data.speed_vector.wz = 0;
+  RCLCPP_INFO(get_logger(),"send len::%d",send_robot_cmd_data_.frame_header.len);
   // 添加帧头crc8校验
   crc8::append_CRC8_check_sum(
       reinterpret_cast<uint8_t *>(&send_robot_cmd_data_), sizeof(HeaderFrame));
-
+  RCLCPP_INFO(get_logger(),"crc8:");
   int retry_count = 0;
 
   while (rclcpp::ok()) {
@@ -872,7 +862,7 @@ void StandardRobotPpRos2Node::sendData() {
     try {
       if (send_robot_cmd_data_.data.speed_vector.wz > 0.5) {
         send_robot_cmd_data_.data.speed_vector.wz = 0.45;
-        RCLCPP_WARN(this->get_logger(), "wz小陀螺大于0.5");
+        //RCLCPP_WARN(this->get_logger(), "wz小陀螺大于0.5");
       }
       // 整包数据校验
       // 添加数据段crc16校验
@@ -881,9 +871,8 @@ void StandardRobotPpRos2Node::sendData() {
           sizeof(SendRobotCmdData));
       // 发送数据
       std::vector<uint8_t> send_data = toVector(send_robot_cmd_data_);
-      // RCLCPP_INFO(get_logger(),"发送is_sacn:
-      // %d",send_robot_cmd_data_.is_scan); RCLCPP_INFO(get_logger(),"发送wz:
-      // %lf",send_robot_cmd_data_.data.speed_vector.wz);
+      //RCLCPP_INFO(get_logger(),"发送is_sacn:%d",send_robot_cmd_data_.is_scan); 
+      //RCLCPP_INFO(get_logger(),"发送wz:%lf",send_robot_cmd_data_.data.speed_vector.wz);
       if (is_two_serial) {
         serial_driver2_->port()->send(send_data);
       } else {
@@ -909,14 +898,14 @@ void StandardRobotPpRos2Node::transform_sentry_pose(){
       return;
     }
     rmDecision::PosTransform pos_transform(sentry_hp,is_in_game);
-    rmDecision::SentryPose sentrypose = pos_transform.pos_to_new();
-    if(sentrypose==rmDecision::SentryPose::Move){
-      send_robot_cmd_data_.sentry_pose = 0;
-    }else if (sentrypose==rmDecision::SentryPose::Defend) {
-      send_robot_cmd_data_.sentry_pose=1;
-    }else if (sentrypose==rmDecision::SentryPose::Attack) {
-      send_robot_cmd_data_.sentry_pose=2;
-    }
+    //rmDecision::SentryPose sentrypose = pos_transform.pos_to_new();
+    // if(sentrypose==rmDecision::SentryPose::Move){
+    //   send_robot_cmd_data_.sentry_pose = 3;
+    // }else if (sentrypose==rmDecision::SentryPose::Defend) {
+    //   send_robot_cmd_data_.sentry_pose=2;
+    // }else if (sentrypose==rmDecision::SentryPose::Attack) {
+    //   send_robot_cmd_data_.sentry_pose=1;
+    // }
 }
 void StandardRobotPpRos2Node::actionStatusCallback(
     const action_msgs::msg::GoalStatusArray::SharedPtr msg) {
@@ -954,7 +943,8 @@ void StandardRobotPpRos2Node::actionStatusCallback(
     // ... 执行打印和指令 ...
     if (current_logic_state == 4) {
       RCLCPP_INFO(this->get_logger(), "### [事件] 到达目标点！开始扫描 ###");
-      send_robot_cmd_data_.is_scan = 0;
+      send_robot_cmd_data_.is_scan = 1;
+      send_robot_cmd_data_.sentry_pose = 2;
       send_robot_cmd_data_.data.speed_vector.wz = 0.0;
     } else if (current_logic_state == 3) {
       RCLCPP_INFO(this->get_logger(), "### [事件] 正在导航中... 停止扫描 ###");
@@ -1122,8 +1112,8 @@ void StandardRobotPpRos2Node::setParam(const rclcpp::Parameter &param) {
 
 bool StandardRobotPpRos2Node::getDetectColor(uint8_t robot_id, uint8_t &color) {
   if (robot_id == 0 || (robot_id > 11 && robot_id < 101)) {
-    RCLCPP_WARN_THROTTLE(get_logger(), *this->get_clock(), 1000,
-                         "Invalid robot ID: %d. Color not set.", robot_id);
+    // RCLCPP_WARN_THROTTLE(get_logger(), *this->get_clock(), 1000,
+    //                      "Invalid robot ID: %d. Color not set.", robot_id);
     return false;
   }
   color = (robot_id >= 100) ? 0 : 1;

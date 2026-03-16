@@ -20,10 +20,17 @@
 #include <vector>
 
 namespace standard_robot_pp_ros2 {
-const uint8_t SOF_RECEIVE = {'M'};
+const uint8_t SOF_RECEIVE = 0xA5;
 const uint8_t SOF_SEND = {'M'};
 
 // Receive
+//==================================//
+// !! 比赛信息数据包id 需要
+const uint16_t ID_GAME_STATUS = 0x0001;
+// !!!! 机器人状态数据包id 需要
+const uint16_t ID_ROBOT_STATUS = 0x0201;
+//======================================//
+
 // debug
 const uint8_t ID_DEBUG = 0x01;
 // IMU  ID 不需要
@@ -37,16 +44,12 @@ const uint8_t ID_EVENT_DATA = 0x04;
 const uint8_t ID_PID_DEBUG = 0x05;
 // !! 全场机器人hp信息数据包id 需要
 const uint8_t ID_ALL_ROBOT_HP = 0x06;
-// !! 比赛信息数据包id 需要
-const uint8_t ID_GAME_STATUS = 0x07;
 // 机器人运动数据包id 不需要
 const uint8_t ID_ROBOT_MOTION = 0x08;
 // !! 地面机器人位置数据包id  需要
 const uint8_t ID_GROUND_ROBOT_POSITION = 0x09;
 // !!!! RFID 状态数据包id 需要
 const uint8_t ID_RFID_STATUS = 0x0A;
-// !!!! 机器人状态数据包id 需要
-const uint8_t ID_ROBOT_STATUS = 0x0B;
 //  云台状态数据包id 不需要
 const uint8_t ID_JOINT_STATE = 0x0C;
 // !!!! 机器人增益和底盘能量数据包id 需要
@@ -59,14 +62,54 @@ const uint8_t DEBUG_PACKAGE_NAME_LEN = 10;
 
 struct HeaderFrame {
   uint8_t sof; // 数据帧起始字节，固定值为 M
-  uint8_t len; // 数据段长度
-  uint8_t id;  // 数据段id
+  uint16_t len; // 数据段长度
+  uint8_t id;  // 数据段seq 包序号
   uint8_t crc; // 数据帧头的 CRC8 校验
 } __attribute__((packed));
 
 /********************************************************/
 /* Receive data                                         */
 /********************************************************/
+
+// !!! 比赛信息数据包 需要
+struct ReceiveGameStatusData {
+  HeaderFrame frame_header;
+  uint16_t cmd_id;
+  struct {
+    
+    uint8_t game_type : 4;
+    // 比赛进度 当前比赛阶段 0-5
+    uint8_t game_progress : 4;
+    // 当前比赛阶段剩余时间
+    uint64_t SyncTimeStamp;
+  } __attribute__((packed)) data;
+  uint16_t crc;
+} __attribute__((packed));
+
+
+struct ReceiveRobotStatus {
+  HeaderFrame frame_header;
+  uint16_t cmd_id;
+    // !!  机器人状态数据包 需要
+  struct
+  {
+    uint8_t robot_id;
+    uint8_t robot_level;
+    uint16_t current_HP;
+    uint16_t maximum_HP;
+    uint16_t shooter_barrel_cooling_value;
+    uint16_t shooter_barrel_heat_limit;
+    uint16_t chassis_power_limit;
+    uint8_t power_management_gimbal_output : 1;
+    uint8_t power_management_chassis_output : 1;
+    uint8_t power_management_shooter_output : 1;
+  }__attribute__((packed)) data;
+
+  uint16_t crc;
+} __attribute__((packed));
+
+//=====================================================//
+
 
 // 串口调试数据包
 struct ReceiveDebugData {
@@ -206,20 +249,6 @@ struct ReceiveAllRobotHpData {
   uint16_t crc;
 } __attribute__((packed));
 
-// !!! 比赛信息数据包 需要
-struct ReceiveGameStatusData {
-  HeaderFrame frame_header;
-  uint32_t time_stamp;
-
-  struct {
-    // 比赛进度 当前比赛阶段 0-5
-    uint8_t game_progress;
-    // 当前比赛阶段剩余时间
-    uint16_t stage_remain_time;
-  } __attribute__((packed)) data;
-
-  uint16_t crc;
-} __attribute__((packed));
 
 // 机器人运动数据包 不需要
 struct ReceiveRobotMotionData {
@@ -320,43 +349,7 @@ struct ReceiveRfidStatus {
   uint16_t crc;
 } __attribute__((packed));
 
-// !!  机器人状态数据包 需要
-struct ReceiveRobotStatus {
-  HeaderFrame frame_header;
-  uint32_t time_stamp;
-  struct {
-    // 本机器人 ID
-    uint8_t robot_id;
-    // 机器人等级
-    uint8_t robot_level;
-    // 机器人当前血量
-    uint16_t current_up;
-    // 机器人血量上限
-    uint16_t maximum_hp;
-    // 机器人射击热量每秒冷却值
-    uint16_t shooter_barrel_cooling_value;
-    // 机器人射击热量上限
-    uint16_t shooter_barrel_heat_limit;
-    // 机器人底盘功率上限
-    uint16_t shooter_17mm_1_barrel_heat;
-    // 本机器人位置 x 坐标
-    float robot_pos_x;
-    // 本机器人位置 y 坐标
-    float robot_pos_y;
-    // 本机器人测速模块的朝向
-    float robot_pos_angle;
-    /* 当扣血原因为装甲模块被弹丸攻击、受撞击、离线或测速模块离线时，
-    数值为装甲模块或测速模块的 ID 编号；当其他原因导致扣血时，该数值为 0*/
-    uint8_t armor_id : 4;
-    // 血量变化类型
-    uint8_t hp_deduction_reason : 4;
-    // 机器人自身拥有的 17mm 弹丸允许发弹量
-    uint16_t projectile_allowance_17mm;
-    // 剩余金币数量
-    uint16_t remaining_gold_coin;
-  } __attribute__((packed)) data;
-  uint16_t crc;
-} __attribute__((packed));
+
 
 // 云台状态数据包 不需要
 struct ReceiveJointState {
@@ -374,7 +367,7 @@ struct ReceiveJointState {
 // !! 机器人增益和底盘能量数据包 需要
 struct ReceiveBuff {
   HeaderFrame frame_header;
-  uint32_t time_stamp;
+  uint16_t cmd_id;
 
   struct {
     //机器人回血增益 百分比

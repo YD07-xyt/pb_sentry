@@ -1,0 +1,43 @@
+[32mwlp4s0：已连接 到 雨一直下[0m
+	"Realtek Wi-Fi"
+	wifi (rtw89_8852be), F8:3D:C6:E0:AD:78, 硬件, mtu 1500
+	ip4 默认, ip6 默认
+	inet4 192.168.141.1/24
+	route4 192.168.1.20/32 metric 600
+	route4 192.168.141.0/24 metric 600
+	route4 default via 192.168.141.149 metric 600
+	inet6 2409:8950:35c5:1a7f:e128:fdbd:19d3:e3e1/64
+	inet6 2409:8950:35c5:1a7f:576:1658:eb09:16c9/64
+	inet6 fe80::4531:fb7e:ecea:f55f/64
+	route6 fe80::/64 metric 1024
+	route6 2409:8950:35c5:1a7f::/64 metric 600
+	route6 default via fe80::5013:ddff:feee:a834 metric 600
+
+[32menp3s0：已连接 到 mid360[0m
+	"Realtek RTL8111/8168/8411"
+	ethernet (r8169), 68:1D:EF:53:AE:70, 硬件, mtu 1500
+	inet4 192.168.1.5/32
+	route4 192.168.1.190/32 metric 100
+	route4 169.254.0.0/16 metric 1000
+	inet6 fe80::a750:596d:8434:6ed5/64
+	route6 fe80::/64 metric 1024
+
+[31mp2p-dev-wlp4s0：已断开[0m
+	"p2p-dev-wlp4s0"
+	wifi-p2p, 硬件
+
+[2mlo：未托管[0m
+	"lo"
+	loopback (unknown), 00:00:00:00:00:00, 软件, mtu 65536
+
+DNS configuration:
+	servers: 192.168.141.149
+	interface: wlp4s0
+
+	servers: 2409:8950:35c5:1a7f::8b
+	interface: wlp4s0
+
+使用 "nmcli device show" 获取关于已知设备的完整信息，以及 
+"nmcli connection show" 获取活动连接配置集的概述。
+
+完整的用法细节，可参考 nmcli(1) 和 nmcli-examples(7) 手册页。

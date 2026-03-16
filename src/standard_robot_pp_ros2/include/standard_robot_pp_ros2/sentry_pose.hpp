@@ -5,9 +5,9 @@
 
 namespace rmDecision{
     enum class SentryPose{
-        Attack=2,
-        Defend=1,
-        Move=0,
+        Attack=1,
+        Defend=2,
+        Move=3,
     };
 
     class PosTransform {
