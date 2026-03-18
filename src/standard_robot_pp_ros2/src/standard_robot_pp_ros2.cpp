@@ -382,6 +382,7 @@ void StandardRobotPpRos2Node::receiveData()
       //     publishRobotStatus(robot_status_data);
       // }
       // crc16_ok 校验正确后根据 header_frame.id 解析数据
+      
       switch (header_frame.id) {
         case ID_DEBUG: {
           ReceiveDebugData debug_data = fromVector<ReceiveDebugData>(data_buf);
