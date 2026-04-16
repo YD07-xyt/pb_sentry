@@ -1,0 +1,23 @@
+[package]
+name = "ma_behavior_tree"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0"
+thiserror = "2.0"
+ros2-client = { version = "0.8.2", features = ["pre-iron-gid"] }
+serde = { version = "1.0", features = ["derive"] }
+smol = "2.0"
+futures-util = { version = "0.3", default-features = false, features = ["std"] }
+env_logger = "0.11"
+log = "0.4"
+pin-project-lite = "0.2"
+async-shutdown = "0.2"
+extension-traits = "2.0"
+async-ctrlc = "1.2"
+
+[[bin]]
+name = "ma_bt"
+path = "src/main.rs" 
+

@@ -1,0 +1,1 @@
+ls -la /home/ma/code/nav_rm_2026/pb_sentry/install/pb2025_nav_bringup/share/pb2025_nav_bringup/pcd/reality/ma.pcd

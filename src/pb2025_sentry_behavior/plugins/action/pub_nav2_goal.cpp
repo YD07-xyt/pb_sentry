@@ -23,6 +23,7 @@ PubNav2GoalAction::PubNav2GoalAction(
   const std::string & name, const BT::NodeConfig & conf, const BT::RosNodeParams & params)
 : RosTopicPubNode<geometry_msgs::msg::PoseStamped>(name, conf, params)
 {
+
 }
 
 // bool PubNav2GoalAction::setMessage(geometry_msgs::msg::PoseStamped & msg)
@@ -36,6 +37,12 @@ PubNav2GoalAction::PubNav2GoalAction(
 // }
 bool PubNav2GoalAction::setMessage(geometry_msgs::msg::PoseStamped & msg)
 {
+  RCLCPP_INFO(node_->get_logger(),"PubNav2GoalAction 开始 setMessage");
+    if (!node_) {
+    RCLCPP_ERROR(rclcpp::get_logger("PubNav2Goal"), "Node is null!");
+    return false;
+  }
+
   auto goal = getInput<geometry_msgs::msg::PoseStamped>("goal");
 
   // 1. 检查输入是否有效
@@ -51,7 +58,7 @@ bool PubNav2GoalAction::setMessage(geometry_msgs::msg::PoseStamped & msg)
   msg.header.frame_id = "map";
   msg.pose = goal.value().pose; 
 
-  RCLCPP_DEBUG(node_->get_logger(), "[%s] 发布目标点: x=%.2f, y=%.2f", 
+  RCLCPP_INFO(node_->get_logger(), "[%s] 发布目标点: x=%.2f, y=%.2f", 
                name().c_str(), msg.pose.position.x, msg.pose.position.y);
 
   return true;
@@ -71,6 +78,7 @@ BT::PortsList PubNav2GoalAction::providedPorts()
     // 这样 BT 就会强制要求从黑板（如 {@default_pose}）获取数据，而不会尝试错误的字符串转换
     BT::InputPort<geometry_msgs::msg::PoseStamped>("goal")
   };
+  RCLCPP_INFO(rclcpp::get_logger("PubNav2GoalAction"), "Got goal from blackboard");
   return providedBasicPorts(additional_ports);
 }
 }  // namespace pb2025_sentry_behavior

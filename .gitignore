@@ -5,3 +5,5 @@
 /.cache
 /src/pb_sentry_nav/point_lio/PCD/
 /src/pb_sentry_nav/pb2025_nav_bringup/pcd/
+/src/tool/pcd2pgm/PCD/
+/src/ma_behavior_tree/target

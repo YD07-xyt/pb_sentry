@@ -1,9 +1,12 @@
+#!/bin/bash
+sleep 6
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source /opt/ros/humble/setup.bash
 source $DIR/install/setup.bash  
 ros2 launch pb2025_nav_bringup rm_navigation_reality_launch.py \
-world:=last \
+world:=rmul2026 \
 slam:=False \
-use_rviz:=True \
+use_rviz:=False \
 use_composition:=True \
 use_robot_state_pub:=True
 

@@ -16,6 +16,9 @@
 
 #include "standard_robot_pp_ros2/crc8_crc16.hpp"
 #include "standard_robot_pp_ros2/packet_typedef.hpp"
+
+#include "standard_robot_pp_ros2/game_data.hpp"
+
 #include "std_srvs/srv/trigger.hpp"
 #include "standard_robot_pp_ros2/sentry_pose.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
@@ -67,10 +70,27 @@ StandardRobotPpRos2Node::StandardRobotPpRos2Node(
   robot_models_.custom_controller = {{0, "无自定义控制器"},
                                      {1, "mini自定义控制器"}};
 
+  // RCLCPP_ERROR(get_logger(),"time");
+  // test_timer_ = this->create_wall_timer(
+  //           std::chrono::milliseconds(1000),  // 定时周期：1秒
+  //           std::bind(&StandardRobotPpRos2Node::test, this)  // 绑定回调函数
+  //       );
+
   serial_port_protect_thread_ =
       std::thread(&StandardRobotPpRos2Node::serialPortProtect, this);
   receive_thread_ = std::thread(&StandardRobotPpRos2Node::receiveData, this);
   send_thread_ = std::thread(&StandardRobotPpRos2Node::sendData, this);
+
+
+}
+void StandardRobotPpRos2Node::test(){
+            //////////////////////////////////
+      ReceiveGameStatusData game_status_data ;
+      publishGameStatus(game_status_data);
+        ReceiveRobotStatus robot_status_data;
+        robot_status_data.data.current_HP= 300;
+        publishRobotStatus(robot_status_data);
+      ////////////////////////////////////
 }
 
 StandardRobotPpRos2Node::~StandardRobotPpRos2Node() {
@@ -393,7 +413,7 @@ void StandardRobotPpRos2Node::receiveData() {
       bool crc8_ok = crc8::verify_CRC8_check_sum(
           reinterpret_cast<uint8_t *>(&header_frame), sizeof(header_frame));
       if (crc8_ok == 0) {
-        // RCLCPP_ERROR(get_logger(), "Header frame CRC8 error!");
+         RCLCPP_ERROR(get_logger(), "Header frame CRC8 error!");
         // RCLCPP_ERROR(get_logger(),
         //              "帧头 CRC8 校验失败! 尝试解析的 ID: 0x%02X, 数据长度: %d, "
         //              "SOF: 0x%02X",
@@ -463,9 +483,37 @@ void StandardRobotPpRos2Node::receiveData() {
       //     publishRobotStatus(robot_status_data);
       // }
       // crc16_ok 校验正确后根据 header_frame.id 解析数据
+      //RCLCPP_INFO(get_logger(),"id: 0x%04x",id);
+
+
+      if(id==0x0001){
+        //RCLCPP_INFO(get_logger(),"id: 0x%04x ",id);
+      }
+      this->hurt=0;
+      send_robot_cmd_data_.data.speed_data.hurt=0;
+  //       send_robot_cmd_data_.data.speed_data.chassis_power_limit=0;
+  // send_robot_cmd_data_.data.speed_data.shooter_barrel_heat_limit=0;
+  // send_robot_cmd_data_.data.speed_data.shooter_17mm_barrel_heat=0;
+  // send_robot_cmd_data_.data.speed_data.hurt=0;
+  // send_robot_cmd_data_.data.speed_data.armor_id=0;
+  // send_robot_cmd_data_.data.speed_data.projectile_allowance_17mm=0;
       switch (id) {
       case ID_IMU: {
       } break;
+      case ID_ROBOT_POWERHEAT: {
+        this->power_heat_data_ = fromVector<ReceivePowerHeatData>(data_buf);
+         send_robot_cmd_data_.data.speed_data.shooter_17mm_barrel_heat= this->power_heat_data_ .data.shooter_17mm_barrel_heat;
+        //RCLCPP_INFO(get_logger(),"get power heat id : 0x%04x", id);
+        //RCLCPP_INFO(get_logger(),"get power heat data: shooter_17mm_barrel_heat  %d", this->power_heat_data_.data.shooter_17mm_barrel_heat);
+      } break;
+      case ID_ROBOT_HURTDATA: {
+        this->hurt_data_ =fromVector<ReceiveHurtData>(data_buf);
+        //RCLCPP_INFO(get_logger(),"ReceiveHurtData HP_deduction_reason  data: %d",this->hurt_data_.data.HP_deduction_reason);
+        //RCLCPP_INFO(get_logger(),"ReceiveHurtData armor_id data: %d",this->hurt_data_.data.armor_id);
+        this->hurt=1;
+        send_robot_cmd_data_.data.speed_data.hurt=1;
+        send_robot_cmd_data_.data.speed_data.armor_id= this->hurt_data_.data.armor_id;
+      } 
       case ID_ROBOT_STATE_INFO: {
       } break;
       case ID_EVENT_DATA: {
@@ -476,10 +524,17 @@ void StandardRobotPpRos2Node::receiveData() {
       case ID_ALL_ROBOT_HP: {
       } break;
       case ID_GAME_STATUS: {
+        //RCLCPP_INFO(get_logger(),"game_status_data");
         ReceiveGameStatusData game_status_data =
             fromVector<ReceiveGameStatusData>(data_buf);
         publishGameStatus(game_status_data);
       } break;
+      case ID_ROBOT_PROJECTILE: {
+        //ReceiveProjectileAllowance robot_projectile_allowance =fromVector<ReceiveProjectileAllowance>(data_buf);
+        robot_projectile_allowance_ =fromVector<ReceiveProjectileAllowance>(data_buf);
+        publishProjectileAllowance(robot_projectile_allowance_);
+        send_robot_cmd_data_.data.speed_data.projectile_allowance_17mm = robot_projectile_allowance_.data.projectile_allowance_17mm;
+      }
       case ID_ROBOT_MOTION: {
       } break;
       case ID_GROUND_ROBOT_POSITION: {
@@ -489,7 +544,17 @@ void StandardRobotPpRos2Node::receiveData() {
       case ID_ROBOT_STATUS: {
         ReceiveRobotStatus robot_status_data =
             fromVector<ReceiveRobotStatus>(data_buf);
-        publishRobotStatus(robot_status_data);
+        //this->robot_status_data_ = fromVector<ReceiveRobotStatus>(data_buf);
+        send_robot_cmd_data_.data.speed_data.robot_id =robot_status_data.data.robot_id;
+        send_robot_cmd_data_.data.speed_data.current_HP = robot_status_data.data.current_HP;
+        send_robot_cmd_data_.data.speed_data.chassis_power_limit= robot_status_data.data.chassis_power_limit;
+        send_robot_cmd_data_.data.speed_data.shooter_barrel_heat_limit =  robot_status_data.data.shooter_barrel_heat_limit;
+        if(robot_status_data.data.power_management_chassis_output ==0 ){
+          send_robot_cmd_data_.data.speed_data.current_HP = 0;
+        }
+        //RCLCPP_INFO(get_logger(),"id: %d", send_robot_cmd_data_.data.speed_data.robot_id);
+        //RCLCPP_INFO(get_logger(),"current hp: %d", send_robot_cmd_data_.data.speed_data.current_HP);
+        publishRobotStatus(robot_status_data_);
       } break;
       case ID_JOINT_STATE: {
       } break;
@@ -629,18 +694,23 @@ void StandardRobotPpRos2Node::publishAllRobotHp(
   all_robot_hp_pub_->publish(msg);
 }
 
+//======================================
+
 void StandardRobotPpRos2Node::publishGameStatus(
     ReceiveGameStatusData &game_status) {
   pb_rm_interfaces::msg::GameStatus msg;
   msg.game_progress = game_status.data.game_progress;
+  //msg.game_progress = 4;
   msg.stage_remain_time = game_status.data.SyncTimeStamp;
-  // RCLCPP_INFO(get_logger(),"game_type:%d",game_status.data.game_type);
-  // RCLCPP_INFO(get_logger(),"game_progress:%d",game_status.data.game_progress);
+  RCLCPP_INFO(get_logger(),"game_type:%d",game_status.data.game_type);
+  RCLCPP_INFO(get_logger(),"game_progress:%d",msg.game_progress);
   // RCLCPP_INFO(get_logger(),"SyncTimeStamp:%ld",game_status.data.SyncTimeStamp);
-
+  //data::game_data=game_status.data.game_progress;
+  data::game_data.push_back(reinterpret_cast<uint8_t>(game_status.data.game_progress));
   //sentry_pose
   if(msg.game_progress==4){
     is_in_game=true;
+    this->send_robot_cmd_data_.is_scan =1;
   }else{
     is_in_game=false;
   }
@@ -648,7 +718,7 @@ void StandardRobotPpRos2Node::publishGameStatus(
   //=================
 
   game_status_pub_->publish(msg);
-
+  RCLCPP_INFO(get_logger(),"game state pub");
   if (record_rosbag_ &&
       game_status.data.game_progress != previous_game_progress_) {
     previous_game_progress_ = game_status.data.game_progress;
@@ -757,6 +827,12 @@ void StandardRobotPpRos2Node::publishRfidStatus(
   rfid_status_pub_->publish(msg);
 }
 
+void StandardRobotPpRos2Node::publishProjectileAllowance(ReceiveProjectileAllowance &data){
+  pb_rm_interfaces::msg::RobotStatus msg;
+  msg.projectile_allowance_17mm= data.data.projectile_allowance_17mm;
+  RCLCPP_INFO(get_logger(),"17mm projectile_allowance: %d", msg.projectile_allowance_17mm);
+};
+
 void StandardRobotPpRos2Node::publishRobotStatus(
     ReceiveRobotStatus &robot_status) {
   pb_rm_interfaces::msg::RobotStatus msg;
@@ -766,7 +842,7 @@ void StandardRobotPpRos2Node::publishRobotStatus(
   msg.robot_level = robot_status.data.robot_level;
   msg.current_hp = robot_status.data.current_HP;
   msg.maximum_hp = robot_status.data.maximum_HP;
-   //RCLCPP_INFO(get_logger(),"current_hp :%d" ,robot_status.data.current_HP);
+  //RCLCPP_INFO(get_logger(),"current_hp :%d" ,robot_status.data.current_HP);
    //RCLCPP_INFO(get_logger(),"maximum_hp :%d" ,robot_status.data.maximum_HP);
   msg.shooter_barrel_cooling_value =
       robot_status.data.shooter_barrel_cooling_value;
@@ -833,6 +909,15 @@ void StandardRobotPpRos2Node::sendData() {
   send_robot_cmd_data_.data.speed_vector.vx = 0;
   send_robot_cmd_data_.data.speed_vector.vy = 0;
   send_robot_cmd_data_.data.speed_vector.wz = 0;
+  send_robot_cmd_data_.data.speed_data.robot_id = 0;
+  send_robot_cmd_data_.data.speed_data.current_HP= 0;
+  send_robot_cmd_data_.data.speed_data.chassis_power_limit=0;
+  send_robot_cmd_data_.data.speed_data.shooter_barrel_heat_limit=0;
+  send_robot_cmd_data_.data.speed_data.shooter_17mm_barrel_heat=0;
+  send_robot_cmd_data_.data.speed_data.hurt=0;
+  send_robot_cmd_data_.data.speed_data.armor_id=0;
+  send_robot_cmd_data_.data.speed_data.projectile_allowance_17mm=0;
+
   RCLCPP_INFO(get_logger(),"send len::%d",send_robot_cmd_data_.frame_header.len);
   // 添加帧头crc8校验
   crc8::append_CRC8_check_sum(
@@ -861,7 +946,7 @@ void StandardRobotPpRos2Node::sendData() {
 
     try {
       if (send_robot_cmd_data_.data.speed_vector.wz > 0.5) {
-        send_robot_cmd_data_.data.speed_vector.wz = 0.45;
+        send_robot_cmd_data_.data.speed_vector.wz = 0.2;
         //RCLCPP_WARN(this->get_logger(), "wz小陀螺大于0.5");
       }
       // 整包数据校验
@@ -871,8 +956,25 @@ void StandardRobotPpRos2Node::sendData() {
           sizeof(SendRobotCmdData));
       // 发送数据
       std::vector<uint8_t> send_data = toVector(send_robot_cmd_data_);
+      
+      ///=======================================================///
+      ///======================= 16进制INFO ==========================///
+      ///=======================================================///
+      // std::stringstream ss;
+      // ss << std::hex << std::setfill('0');
+      // for (size_t i = 0; i < send_data.size(); ++i) {
+      //     ss << std::setw(2) << static_cast<int>(send_data[i]);
+      //     if (i != send_data.size() - 1) {
+      //         ss << " ";  // 添加空格分隔
+      //     }
+      // }
+
+      // RCLCPP_INFO(this->get_logger(), "Send data: %s", ss.str().c_str());
+      //=========================================================//
+
+
       //RCLCPP_INFO(get_logger(),"发送is_sacn:%d",send_robot_cmd_data_.is_scan); 
-      //RCLCPP_INFO(get_logger(),"发送wz:%lf",send_robot_cmd_data_.data.speed_vector.wz);
+      RCLCPP_INFO(get_logger(),"发送wz:%lf",send_robot_cmd_data_.data.speed_vector.wz);
       if (is_two_serial) {
         serial_driver2_->port()->send(send_data);
       } else {
@@ -886,9 +988,10 @@ void StandardRobotPpRos2Node::sendData() {
         is_usb_ok_ = false;
       }
     }
-    std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
   }
 }
+
 void StandardRobotPpRos2Node::transform_sentry_pose(){
     if(!is_in_game){
       return;
@@ -898,15 +1001,16 @@ void StandardRobotPpRos2Node::transform_sentry_pose(){
       return;
     }
     rmDecision::PosTransform pos_transform(sentry_hp,is_in_game);
-    //rmDecision::SentryPose sentrypose = pos_transform.pos_to_new();
-    // if(sentrypose==rmDecision::SentryPose::Move){
-    //   send_robot_cmd_data_.sentry_pose = 3;
-    // }else if (sentrypose==rmDecision::SentryPose::Defend) {
-    //   send_robot_cmd_data_.sentry_pose=2;
-    // }else if (sentrypose==rmDecision::SentryPose::Attack) {
-    //   send_robot_cmd_data_.sentry_pose=1;
-    // }
+    rmDecision::SentryPose sentrypose = pos_transform.pos_to_new();
+    if(sentrypose==rmDecision::SentryPose::Move){
+      send_robot_cmd_data_.sentry_pose = 3;
+    }else if (sentrypose==rmDecision::SentryPose::Defend) {
+      send_robot_cmd_data_.sentry_pose=2;
+    }else if (sentrypose==rmDecision::SentryPose::Attack) {
+      send_robot_cmd_data_.sentry_pose=1;
+    }
 }
+
 void StandardRobotPpRos2Node::actionStatusCallback(
     const action_msgs::msg::GoalStatusArray::SharedPtr msg) {
   if (msg->status_list.empty())
@@ -943,16 +1047,16 @@ void StandardRobotPpRos2Node::actionStatusCallback(
     // ... 执行打印和指令 ...
     if (current_logic_state == 4) {
       RCLCPP_INFO(this->get_logger(), "### [事件] 到达目标点！开始扫描 ###");
-      send_robot_cmd_data_.is_scan = 1;
+      //send_robot_cmd_data_.is_scan = 1;
       send_robot_cmd_data_.sentry_pose = 2;
-      send_robot_cmd_data_.data.speed_vector.wz = 0.0;
+      send_robot_cmd_data_.data.speed_vector.wz = 0.2;
     } else if (current_logic_state == 3) {
       RCLCPP_INFO(this->get_logger(), "### [事件] 正在导航中... 停止扫描 ###");
-      send_robot_cmd_data_.is_scan = 0;
-      send_robot_cmd_data_.data.speed_vector.wz = 0.0;
+      //send_robot_cmd_data_.is_scan = 0;
+      send_robot_cmd_data_.data.speed_vector.wz = 0.2;
     } else if (current_logic_state == 0) {
       RCLCPP_WARN(this->get_logger(), "### [事件] 导航已停止 (失败/取消) ###");
-      send_robot_cmd_data_.is_scan = 0;
+      //send_robot_cmd_data_.is_scan = 0;
     }
 
     last_logic_state = current_logic_state;
@@ -983,38 +1087,38 @@ void StandardRobotPpRos2Node::result_callback(
   switch (result.code) {
   case rclcpp_action::ResultCode::SUCCEEDED:
     RCLCPP_INFO(this->get_logger(), "目标达成！机器人已成功到达 Goal。");
-    send_robot_cmd_data_.is_scan = 0;
-    send_robot_cmd_data_.data.speed_vector.wz = 0.0;
+    //send_robot_cmd_data_.is_scan = 0;
+    send_robot_cmd_data_.data.speed_vector.wz = 0.2;
     break;
   case rclcpp_action::ResultCode::ABORTED:
     RCLCPP_ERROR(this->get_logger(), "任务被中止，导航失败。");
-    send_robot_cmd_data_.is_scan = 0;
-    send_robot_cmd_data_.data.speed_vector.wz = 0.0;
+   // send_robot_cmd_data_.is_scan = 0;
+    send_robot_cmd_data_.data.speed_vector.wz = 0.2;
     return;
   case rclcpp_action::ResultCode::CANCELED:
     RCLCPP_WARN(this->get_logger(), "任务被取消。");
-    send_robot_cmd_data_.is_scan = 0;
-    send_robot_cmd_data_.data.speed_vector.wz = 0.0;
+    //send_robot_cmd_data_.is_scan = 0;
+    send_robot_cmd_data_.data.speed_vector.wz = 0.2;
     return;
   default:
     RCLCPP_ERROR(this->get_logger(), "未知的返回状态。");
-    send_robot_cmd_data_.is_scan = 0;
-    send_robot_cmd_data_.data.speed_vector.wz = 0.0;
+   // send_robot_cmd_data_.is_scan = 0;
+    send_robot_cmd_data_.data.speed_vector.wz = 0.2;
     return;
   }
 }
 
 void StandardRobotPpRos2Node::getGoalState(
     const pb_rm_interfaces::msg::NavGoal::SharedPtr msg) {
-  //  goal_state =1 导航成功
-  //  if(msg->goal_state == 1){
-  //     send_robot_cmd_data_.is_scan = 1;
-  //     RCLCPP_INFO(get_logger(),"goal 成功");
-  //     send_robot_cmd_data_.data.speed_vector.wz = 0.2;
-  //  }else{
-  //   send_robot_cmd_data_.is_scan =0;
-  //   send_robot_cmd_data_.data.speed_vector.wz = 0.0;
-  //  };
+   //goal_state =1 导航成功
+   if(msg->goal_state == 1){
+     // send_robot_cmd_data_.is_scan = 1;
+      RCLCPP_INFO(get_logger(),"goal 成功");
+      send_robot_cmd_data_.data.speed_vector.wz = 0.2;
+   }else{
+   // send_robot_cmd_data_.is_scan =0;
+    send_robot_cmd_data_.data.speed_vector.wz = 0.2;
+   };
 
   RCLCPP_INFO(this->get_logger(), "反馈gaol状态成功");
 }
@@ -1024,7 +1128,7 @@ void StandardRobotPpRos2Node::cmdVelCallback(
   send_robot_cmd_data_.data.speed_vector.vx = msg->linear.x;
   send_robot_cmd_data_.data.speed_vector.vy = msg->linear.y;
   // send_robot_cmd_data_.data.speed_vector.wz = 0.0001*msg->angular.z;
-  // send_robot_cmd_data_.data.speed_vector.wz = 0.0;
+  send_robot_cmd_data_.data.speed_vector.wz = 0.2;
 }
 
 void StandardRobotPpRos2Node::cmdGimbalJointCallback(

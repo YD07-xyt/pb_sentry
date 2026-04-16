@@ -31,7 +31,7 @@ BT::NodeStatus IsGameStatusCondition::checkGameStart()
     RCLCPP_ERROR(logger_, "GameStatus message is not available");
     return BT::NodeStatus::FAILURE;
   }
-
+  //RCLCPP_INFO(logger_,"GameStatus is good " );
   getInput("expected_game_progress", expected_game_progress);
   getInput("min_remain_time", min_remain_time);
   getInput("max_remain_time", max_remain_time);

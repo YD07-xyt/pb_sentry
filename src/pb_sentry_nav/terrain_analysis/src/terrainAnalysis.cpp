@@ -175,7 +175,9 @@ void laserCloudHandler(
 
   laserCloud->clear();
   pcl::fromROSMsg(*laserCloud2, *laserCloud);
-
+  ///===========================================//
+  double robotRadius = 0.27;  // 建议从参数读取
+  //============================================//
   pcl::PointXYZI point;
   laserCloudCrop->clear();
   int laserCloudSize = laserCloud->points.size();
@@ -188,6 +190,10 @@ void laserCloudHandler(
 
     float dis = sqrt((pointX - vehicleX) * (pointX - vehicleX) +
                      (pointY - vehicleY) * (pointY - vehicleY));
+    if (dis < robotRadius) {
+            continue;  // 跳过机器人自身范围内的点
+    }
+
     if (pointZ - vehicleZ > minRelZ - disRatioZ * dis &&
         pointZ - vehicleZ < maxRelZ + disRatioZ * dis &&
         dis < terrainVoxelSize * (terrainVoxelHalfWidth + 1)) {

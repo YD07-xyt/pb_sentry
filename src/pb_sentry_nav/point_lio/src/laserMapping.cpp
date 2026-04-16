@@ -379,6 +379,7 @@ int main(int argc, char ** argv)
       lid_topic, rclcpp::SensorDataQoS(),
       [](const sensor_msgs::msg::PointCloud2::SharedPtr msg) { standard_pcl_cbk(msg); });
   }
+  RCLCPP_INFO(nh->get_logger(),"point lio 开始pub");
   auto sub_imu =
     nh->create_subscription<sensor_msgs::msg::Imu>(imu_topic, rclcpp::SensorDataQoS(), imu_cbk);
   auto pub_laser_cloud_full_res =

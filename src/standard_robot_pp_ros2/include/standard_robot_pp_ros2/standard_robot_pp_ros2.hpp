@@ -53,6 +53,13 @@ public:
   ~StandardRobotPpRos2Node() override;
 
 private:
+    ReceivePowerHeatData power_heat_data_ ;
+    ReceiveHurtData hurt_data_;
+    uint8_t hurt;
+    ReceiveRobotStatus robot_status_data_ ;
+    ReceiveProjectileAllowance robot_projectile_allowance_;
+    SendRobotRMData send_robot_rm_data_;
+private:
   bool is_usb_ok_;
   bool is_usb_ok2_;
   bool is_two_serial;
@@ -119,7 +126,11 @@ private:
   void receiveData();
   void sendData();
   void serialPortProtect();
-
+  ////
+  rclcpp::TimerBase::SharedPtr test_timer_;
+void test();
+void publishProjectileAllowance(ReceiveProjectileAllowance &data);
+///
   void publishDebugData(ReceiveDebugData &data);
   void publishImuData(ReceiveImuData &data);
   void publishRobotInfo(ReceiveRobotInfoData &data);

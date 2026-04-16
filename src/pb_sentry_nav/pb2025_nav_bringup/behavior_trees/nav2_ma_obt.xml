@@ -1,0 +1,50 @@
+<root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <RecoveryNode number_of_retries="8" name="NavigateRecovery">
+      <PipelineSequence name="NavigateWithReplanning">
+        <RateController hz="6">
+                <RecoveryNode number_of_retries="1" name="ComputePathToPose">
+                    <Sequence name="ComputeAndSmoothPath">
+                        <GoalUpdater input_goal="{goal}" output_goal="{updated_goal}">
+                            <!-- <ComputePathToPose goal="{updated_goal}" path="{path}" planner_id="GridBased"/> -->
+                            <ComputePathToPose goal="{updated_goal}" path="{path}" 
+                               planner_id="GridBased"
+                               error_code_id="{plan_error_code}"
+                               error_msg="{plan_error_msg}"/>
+                        </GoalUpdater>
+                    </Sequence>
+                        <Sequence name="ConditionalClear">
+                        <WouldAPlannerRecoveryHelp error_code="{plan_error_code}"/>
+                        <GenerateNearbyPoses input_goal="{goal}" output_goals="{nearby_goals}"/>
+                        <ComputePathThroughPoses goals="{nearby_goals}" path="{path}" 
+                                                planner_id="GridBased"
+                                                use_start="false"/>
+                        <GenerateNearbyPoses input_goal="{goal}" output_poses="{nearby_goals}" radius="0.5" count="10"/>
+                        <FilterCollisionPoses input_poses="{nearby_goals}" output_poses="{safe_goals}"/>
+                        <ComputePathToPose goal="{safe_goals}" path="{path}" 
+                               planner_id="GridBased"
+                               error_code_id="{plan_error_code}"
+                               error_msg="{plan_error_msg}"/>
+                    </Sequence>
+                        <SmoothPath unsmoothed_path="{path}" smoothed_path="{smoothed_path}"/>
+                    <ClearEntireCostmap name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_entirely_global_costmap"/>
+                </RecoveryNode>
+                </RateController>
+                <RecoveryNode number_of_retries="1" name="FollowPath">
+                <FollowPath path="{smoothed_path}" controller_id="FollowPath"/>
+                <Sequence name="recovery_actions">
+                    <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
+                </Sequence>
+                </RecoveryNode>
+            </PipelineSequence>
+            <ReactiveFallback name="RecoveryFallback">
+                <GoalUpdated/>
+                <RoundRobin name="RecoveryActions">
+          <BackUp backup_dist="0.05" backup_speed="0.4"/>
+          <BackUp backup_dist="0.07" backup_speed="0.4"/>
+          <BackUp backup_dist="0.1" backup_speed="0.4"/>
+        </RoundRobin>
+      </ReactiveFallback>
+    </RecoveryNode>
+  </BehaviorTree>
+</root>

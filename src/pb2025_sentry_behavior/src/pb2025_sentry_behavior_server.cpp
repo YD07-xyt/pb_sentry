@@ -76,27 +76,38 @@ bool SentryBehaviorServer::onGoalReceived(
     payload.c_str());
   // 构造一个默认的 Pose
   //-5.01, -5.08, 0
+  // geometry_msgs::msg::PoseStamped default_pose;
+  // default_pose.header.frame_id = "map";
+  // default_pose.header.stamp = node()->now();
+  // default_pose.pose.position.x = 1.23;  // X 坐标
+  // default_pose.pose.position.y = -1.73;  // Y 坐标
+  // default_pose.pose.position.z = 0.0;  // 平面移动通常 Z 为 0
+  // default_pose.pose.orientation.w = 1.0; 
+
   geometry_msgs::msg::PoseStamped default_pose;
   default_pose.header.frame_id = "map";
   default_pose.header.stamp = node()->now();
-  default_pose.pose.position.x = -0.043;  // X 坐标
-  default_pose.pose.position.y = -0.018;  // Y 坐标
+  default_pose.pose.position.x = 0.75;  // X 坐标
+  default_pose.pose.position.y = -1.0;  // Y 坐标
   default_pose.pose.position.z = 0.0;  // 平面移动通常 Z 为 0
   default_pose.pose.orientation.w = 1.0; 
+
 
   geometry_msgs::msg::PoseStamped center_goal;
   center_goal.header.frame_id = "map";
   center_goal.header.stamp = node()->now();
-  center_goal.pose.position.x = 2.02;  // X 坐标
-  center_goal.pose.position.y = 0.148;  // Y 坐标
+  center_goal.pose.position.x = 6.0;  // X 坐标
+  center_goal.pose.position.y = -4.1;  // Y 坐标
   center_goal.pose.position.z = 0.0;  // 平面移动通常 Z 为 0
   center_goal.pose.orientation.w = 1.0; 
   //std::string default_pose = "-3.0;3.0;0.0"; 
   //std::string center_goal = "-1.0;-1.0;0.0";
   // 强行写入全局黑板
-  std::cout<<" center_goal写入全局黑板"<<std::endl;
+  
   globalBlackboard()->set("default_pose", default_pose);
   globalBlackboard()->set("center_goal", center_goal);
+  std::cout<<" center_goal写入全局黑板"<<std::endl;
+  std::cout<<" defalut_goal写入全局黑板"<<std::endl;
   return true;
 }
 

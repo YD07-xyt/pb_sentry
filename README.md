@@ -1,6 +1,11 @@
 # MA-sentry-2026
 
 
+## RMUL 
+(3.0,4.5)
++(0.1,0.1)=
+(3.1,4.6)
+
 ## env
 
 ```bash
@@ -82,12 +87,3 @@ ros2 run tf2_ros static_transform_publisher \
 ```bash
 ros2 run tf2_ros static_transform_publisher --x 0 --y 0 --z 0 --roll 0 --pitch 0 --yaw 0 --frame-id map --child-frame-id odom --ros-args -r __ns:=/red_standard_robot1
 ```
-
-
-
-
-
-
-
-
-

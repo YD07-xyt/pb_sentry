@@ -22,41 +22,57 @@
     </Fallback>
   </BehaviorTree>
 
+
   <BehaviorTree ID="check_robot_status">
     <Fallback>
-      <IsStatusOK ammo_min="0"
-                  heat_max="100000"
-                  hp_min="200"
+      <!-- 情况1：状态正常，返回 SUCCESS -->
+      <IsStatusOK ammo_min="0" 
+                  heat_max="100000" 
+                  hp_min="100"
                   key_port="{@referee_robotStatus}"/>
-      <ForceFailure>
-        <Fallback>
-          <IsRfidDetected friendly_supply_zone_exchange="false"
-                          friendly_supply_zone_non_exchange="true"
-                          center_gain_point="false"
-                          friendly_fortress_gain_point="false"
-                          key_port="{@referee_rfidStatus}"/>
-          <PubNav2Goal goal="{@default_pose}"
-                       topic_name="goal_pose"/>
-        </Fallback>
-      </ForceFailure>
+      <!-- 情况2：状态异常，直接导航回家点 -->
+      <Sequence>
+        <!-- 发送回家点导航目标 -->
+        <PubNav2Goal goal="{@default_pose}"
+                    topic_name="goal_pose"/>
+        <!-- 返回 SUCCESS，让主循环继续 -->
+        <AlwaysSuccess/>
+      </Sequence>
     </Fallback>
   </BehaviorTree>
 
-  <BehaviorTree ID="rmul_2025">
+    <BehaviorTree ID="rmul_2025">
     <KeepRunningUntilFailure>
-      <ForceSuccess>
+        <ForceSuccess>
         <ReactiveSequence>
-          <SubTree ID="check_game_start"/>
-          <PublishSpinSpeed spin_speed="6.0"
+            <!-- 1. 检查比赛状态 -->
+            <SubTree ID="check_game_start"/>
+            
+            <!-- 2. 停止旋转，准备决策 -->
+            <PublishSpinSpeed spin_speed="0.0"
                             duration="0.0"
                             topic_name="cmd_spin"/>
-          <SubTree ID="check_robot_status"/>
-          <PubNav2Goal goal="{@center_goal}"
-                       topic_name="goal_pose"/>
+            
+            <!-- 3. 根据状态选择目标点（二选一） -->
+            <Fallback>
+            <!-- 分支A：状态正常 → 去中心点 -->
+            <ReactiveSequence>
+                <IsStatusOK ammo_min="0" 
+                            heat_max="100000" 
+                            hp_min="100"
+                            key_port="{@referee_robotStatus}"/>
+                <PubNav2Goal goal="{@center_goal}"
+                            topic_name="goal_pose"/>
+            </ReactiveSequence>
+            
+            <!-- 分支B：状态异常 → 回家点 -->
+            <PubNav2Goal goal="{@default_pose}"
+                        topic_name="goal_pose"/>
+            </Fallback>
         </ReactiveSequence>
-      </ForceSuccess>
+        </ForceSuccess>
     </KeepRunningUntilFailure>
-  </BehaviorTree>
+    </BehaviorTree>
 
   <!-- Description of Node Models (used by Groot) -->
   <TreeNodesModel>
